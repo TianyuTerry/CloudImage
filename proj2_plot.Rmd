@@ -1,0 +1,306 @@
+---
+title: "proj2_plots"
+author: "Shiqi Liu"
+date: "11/29/2022"
+output: pdf_document
+---
+data and packages
+```{r}
+require(tidyverse)
+require(rstanarm)
+require(magrittr)
+require(rstan)
+require(plyr)
+require(patchwork)
+require(scales)
+require(psych)
+require(GGally)
+require(gridExtra)
+#require(MASS)
+ggplot2::theme_set(ggplot2::theme_bw())
+knitr::opts_chunk$set(fig.align = 'center')
+```
+```{r read data, message=F, warning=F, echo=F}
+image1=read.table("data/imagem1.txt")
+colnames(image1)=c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image2=read.table("data/imagem2.txt")
+colnames(image2)=c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+image3=read.table("data/imagem3.txt")
+colnames(image3)=c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
+```
+
+2(b) percent-table
+```{r}
+png(file="plot/percent-table.png",units = "in",width=4,
+    height=1.2 ,pointsize=12,res=300)
+rbind(image1%>%select(3)%>%mutate(image="Image1"),
+      image2%>%select(3)%>%mutate(image="Image2"),
+      image3%>%select(3)%>%mutate(image="Image3"))%>%
+  group_by(image,label)%>%
+  count()%>%
+  pivot_wider(names_from = label,values_from = freq)%>%
+  mutate(sum1=rowSums(.[,2:4]))%>%
+  mutate(`not cloud`=percent(`-1`/sum1,accuracy=0.01),
+         unlabeled=percent(`0`/sum1,accuracy=0.01),
+         cloud=percent(`1`/sum1,accuracy=0.01),
+         Total="100%")%>%
+  select(c(1,6:9))%>%
+  grid.table( rows = NULL)
+dev.off()
+  # knitr::kable(caption = "Percentage of Percentage of not cloud, unlabeled and cloud for each image.")%>%
+  # save_kable("plot/percent-table.png")
+```
+
+1(b) labeled-images
+```{r}
+png(file="plot/labeled-images.png",units = "in",width=7.5,
+    height=3,pointsize=12,res=300)
+p1=rbind(image1%>%select(1:3)%>%mutate(image="Image1"),
+      image2%>%select(1:3)%>%mutate(image="Image2"),
+      image3%>%select(1:3)%>%mutate(image="Image3"))%>%
+  ggplot(aes(x,y,color=factor(label)))+
+  geom_point(shape=15,size=1)+
+  facet_wrap(~image)+
+  coord_fixed()+
+  labs(x="x coordinate",y="y coordinate")+
+  scale_color_manual(values=c("#501d8a", "#1c8041", "#e55709"),
+                     labels=c("not cloud","unlabeled","cloud"))+
+  theme(legend.position="right",legend.title=element_blank())
+p1
+dev.off()
+```
+1(c) pairwise-correlations
+```{r}
+png(file="plot/pairwise-correlations.png",units = "in",width=6,
+    height=4,pointsize=12,res=300)
+df1=rbind(image1,image2,image3)%>%
+  select(3:11)
+df1%>%
+  select(2:9)%>%
+  ggpairs()
+
+dev.off()
+```
+1(c) label-features
+```{r}
+png(file="plot/label-feature1.png",units = "in",width=14,
+    height=7,pointsize=12,res=300)
+df2=df1%>%
+  filter(label!=0)
+
+p1=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,NDAI))+
+  geom_point()+
+  labs(title="Label and NDAI",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$NDAI),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$NDAI),4)))
+
+p2=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,SD))+
+  geom_point()+
+  labs(title="Label and SD",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$SD),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$SD),4)))
+
+p3=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,CORR))+
+  geom_point()+
+  labs(title="Label and CORR",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$CORR),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$CORR),4)))
+
+p4=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,DF))+
+  geom_point()+
+  labs(title="Label and DF",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$DF),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$DF),4)))
+
+p5=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,CF))+
+  geom_point()+
+  labs(title="Label and CF",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$CF),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$CF),4)))
+
+p6=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,BF))+
+  geom_point()+
+  labs(title="Label and BF",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$BF),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$BF),4)))
+
+p7=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,AF))+
+  geom_point()+
+  labs(title="Label and AF",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$AF),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$AF),4)))
+
+p8=df1%>%
+  filter(label!=0)%>%
+  ggplot(aes(label,AN))+
+  geom_point()+
+  labs(title="Label and AN",
+       subtitle = paste0("Correlation with unlabelled =",
+                         round(cor(df1$label,df1$AN),4),
+                         "\nCorrelation without unlabelled =",
+                         round(cor(df2$label,df2$AN),4)))
+
+p1+p2+p3+p4+p5+p6+p7+p8+plot_layout(nrow=2,byrow = F)
+dev.off()
+```
+
+2(a)
+```{r}
+set.seed(123456)
+group_image1=group_fun1(image1)
+group_image2=group_fun1(image2)
+group_image3=group_fun1(image3)
+group_image1p=group_fun1(image1,drop_margin = TRUE)
+group_image2p=group_fun1(image2,drop_margin = TRUE)
+group_image3p=group_fun1(image3,drop_margin = TRUE)
+
+group_images=rbind(group_image1,group_image2,group_image3)
+group_imagesp=rbind(group_image1p,group_image2p,group_image3p)
+```
+2(a)
+```{r}
+png(file="plot/split-result.png",units = "in",width=3,
+    height=2 ,pointsize=12,res=300)
+group_images%>%
+  select(c(3,12))%>%
+  group_by(label,fold)%>%
+  count()%>%
+  pivot_wider(names_from=label,values_from=freq)%>%
+  mutate(sum1=rowSums(.[,2:3]))%>%
+  mutate(`not cloud`=percent(`-1`/sum1,accuracy=0.01),
+         #unlabeled=percent(`0`/sum1,accuracy=0.01),
+         cloud=percent(`1`/sum1,accuracy=0.01),
+         Total="100%")%>%
+  select(c(1,5:7))%>%
+  grid.table( rows = NULL)
+dev.off()
+  # knitr::kable(caption = "Percentage of Percentage of not cloud, unlabeled and cloud for each image.")%>%
+  # save_kable("plot/percent-table.png")
+```
+2(b)
+```{r accuracy of trivial classifier}
+test_data=group_images%>%filter(fold==1)
+valid_data=group_images%>%filter(fold==2)
+train_data=group_images%>%filter(fold!=1&fold!=2)
+
+acc1_test=test_data%>%
+  select(c(3,12))%>%
+  group_by(label,fold)%>%
+  count()%>%
+  pivot_wider(names_from=label,values_from=freq)%>%
+  mutate(sum1=rowSums(.[,2:3]))%>%
+  mutate(`not cloud`=percent(`-1`/sum1,accuracy=0.01),
+         #unlabeled=percent(`0`/sum1,accuracy=0.01),
+         cloud=percent(`1`/sum1,accuracy=0.01),
+         Total="100%")%>%
+  select(c(5:7))%>%
+  mutate(data="test",`split method`="block split")%>%
+  select(c(4,5,1:3))
+acc1_valid=valid_data%>%
+  select(c(3,12))%>%
+  group_by(label,fold)%>%
+  count()%>%
+  pivot_wider(names_from=label,values_from=freq)%>%
+  mutate(sum1=rowSums(.[,2:3]))%>%
+  mutate(`not cloud`=percent(`-1`/sum1,accuracy=0.01),
+         #unlabeled=percent(`0`/sum1,accuracy=0.01),
+         cloud=percent(`1`/sum1,accuracy=0.01),
+         Total="100%")%>%
+  select(c(5:7))%>%
+  mutate(data="valid",`split method`="block split")%>%
+  select(c(4,5,1:3))
+
+test2_data=group_imagesp%>%filter(fold==6)
+valid2_data=group_imagesp%>%filter(fold==5)
+train2_data=group_imagesp%>%filter(fold!=6&fold!=5)
+
+acc2_test=test2_data%>%
+  select(c(3,12))%>%
+  group_by(label,fold)%>%
+  count()%>%
+  pivot_wider(names_from=label,values_from=freq)%>%
+  mutate(sum1=rowSums(.[,2:3]))%>%
+  mutate(`not cloud`=percent(`-1`/sum1,accuracy=0.01),
+         #unlabeled=percent(`0`/sum1,accuracy=0.01),
+         cloud=percent(`1`/sum1,accuracy=0.01),
+         Total="100%")%>%
+  select(c(5:7))%>%
+  mutate(data="test",`split method`="remove margin")%>%
+  select(c(4,5,1:3))
+acc2_valid=valid2_data%>%
+  select(c(3,12))%>%
+  group_by(label,fold)%>%
+  count()%>%
+  pivot_wider(names_from=label,values_from=freq)%>%
+  mutate(sum1=rowSums(.[,2:3]))%>%
+  mutate(`not cloud`=percent(`-1`/sum1,accuracy=0.01),
+         #unlabeled=percent(`0`/sum1,accuracy=0.01),
+         cloud=percent(`1`/sum1,accuracy=0.01),
+         Total="100%")%>%
+  select(c(5:7))%>%
+  mutate(data="valid",`split method`="remove margin")%>%
+  select(c(4,5,1:3))
+
+png(file="plot/trivial-classifier.png",units = "in",width=4.2,
+    height=1.5 ,pointsize=12,res=300)
+rbind(acc1_test,acc1_valid,acc2_test,acc2_valid)%>%
+  grid.table( rows = NULL)
+dev.off()
+```
+2(c)
+```{r,message=FALSE}
+lr_model=glm(formula=factor(label)~1,
+            group_images,family=binomial)
+lr_for=step(lr_model,direction="forward",scope=~NDAI + SD + CORR + DF + CF + BF + AF + AN,steps=100)
+```
+```{r}
+png(file="plot/best-features.png",units = "in",width=5.3,
+    height=3 ,pointsize=12,res=300)
+lr_for$anova%>%
+  grid.table( rows = NULL)
+dev.off()
+
+```
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
