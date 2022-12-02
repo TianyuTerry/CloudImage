@@ -18,7 +18,10 @@ require(scales)
 require(psych)
 require(GGally)
 require(gridExtra)
-
+require(MASS)
+require(e1071)
+require(adabag)
+require(class)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -44,7 +47,7 @@ knitr::include_graphics("plot/percent-table.png")
 
 Well-labeled maps are shown in Figure \@ref(fig:labeled-images). Based on the labeled map, the pixels show a sticky pattern in all three images. Meanwhile, cloud regions and clear regions are separated by unlabeled pixels. Therefore, i.i.d. assumption can't be justified for this data set.
 
-```{r labeled-images,fig.cap="Image1-3 with expect labelled.",echo=FALSE}
+```{r labeled-images,fig.cap="Image1-3 with expert labelled.",echo=FALSE}
 knitr::include_graphics("plot/labeled-images.png") 
 ```
 ### (c)
@@ -54,7 +57,7 @@ See Figure \@ref(fig:pairwise-correlations).
 knitr::include_graphics("plot/pairwise-correlations.png") 
 ```
 See Figure \@ref(fig:label-feature1).
-```{r label-feature1,fig.cap="Scattor-plots of label verse each feature, with unlabelled data removed. Correlations of label and each feature with and without unlabeled data. ", echo=FALSE}
+```{r label-feature1,fig.cap="Boxplots of label verse each feature, with unlabelled data removed. Correlations of label and each feature with and without unlabeled data. ", echo=FALSE}
 knitr::include_graphics("plot/label-feature1.png") 
 ```
 
@@ -62,18 +65,21 @@ knitr::include_graphics("plot/label-feature1.png")
 
 ### (a)
 
-For the three images in Figure \@ref(fig:labeled-images), each of them may have unique pattern. In case of over-fitting to one particular image, the combination of the three images is necessary before training. We also notice that there are some strong dependencies between one pixel and its neighbors. Therefore, we choose to split the  data set by block splitting, to avoid breaking its spatial structure. To be specific, we first divide the data set into numerous $8\times 8$ pixel blocks and for pixels in the same $8\times 8$ block, they are all assigned to one fold randomly chosen from $K$ folds, and the default value of $K$ is $6$, and unlabeled points are removed. Also, we don't desire that blocks at same location of different images are in the same fold, so the three data sets are grouped separately before combination. As a result of large number of blocks, percentages of all three labels (in Figure \@ref(fig:split-result)) are nearly even among different folds. After all, all blocks in fold $1$ are used for testing data, all blocks in fold $2$ are used for validation, and the rest are used for training data.
-
-To enlarge the gap between the features of not cloud data and features of cloud data, we drop blocks which are not purely not cloud or cloud. it means that we drop almost all data points around the boundaries (in Figure \@ref(fig:labeled-images)) between different labels, and everything else is the same as the first method.
-
-
+For the three images in Figure \@ref(fig:labeled-images), each of them may have unique pattern. In case of over-fitting to one particular image, the combination of the three images is necessary before training. We also notice that there are some strong dependencies between one pixel and its neighbors. Therefore, we choose to split the  data set by block splitting, to avoid breaking its spatial structure. To be specific, we first divide the data set into numerous $8\times 8$ pixel blocks and for pixels in the same $8\times 8$ block, they are all assigned to one fold randomly chosen from $K$ folds, and the default value of $K$ is $6$, and unlabeled points are removed. Also, we don't desire that blocks at same location of different images are in the same fold, so the three data sets are grouped separately before combination. As a result of large number of blocks, percentages of all three labels (in Figure \@ref(fig:split-result)) are nearly even among different folds. After all, all blocks in fold $K$ are used for testing data, all blocks in fold $K-1$ are used for validation, and the rest are used for training data.
 
 ```{r split-result,fig.cap="Percentage of not cloud and cloud for fold1-6.",out.width="30%",echo=FALSE}
 knitr::include_graphics("plot/split-result.png") 
 ```
 
+To enlarge the gap between the features of not cloud data and features of cloud data, we drop blocks which are not purely not cloud or cloud. it means that we drop all data points around the boundaries between different labels (in Figure \@ref(fig:margin-remove)), and everything else is the same as the first splitting method.
+
+```{r margin-remove,fig.cap="Image1-3 with removing data points around the boundaries between labels and unlabelled pixels.",echo=FALSE}
+knitr::include_graphics("plot/margin-remove.png") 
+```
 
 ### (b)
+
+For test and validation data sets using either one of the two splitting methods, 
 
 ```{r trivial-classifier,fig.cap="Percentage of not cloud and cloud for validation set and test set of two split method.",out.width="50%",echo=FALSE}
 knitr::include_graphics("plot/trivial-classifier.png") 
@@ -83,7 +89,7 @@ knitr::include_graphics("plot/trivial-classifier.png")
 
 By performing the logistic regression forward selection on all features (in Figure \@ref(fig:best-features)), NDAI, CORR, and SD are three of the "best" features. With adding NDAI, CORR, and SD to the training model, AIC drop significantly.
 
-```{r best-features,fig.cap="Result of logistic regression forward selection on all features." ,out.width="50%",echo=FALSE}
+```{r best-features,fig.cap="Result of logistic regression forward selection on all features." ,out.width="60%",echo=FALSE}
 knitr::include_graphics("plot/best-features.png") 
 ```
 
@@ -97,6 +103,21 @@ The CVmaster function is in CVmaster.R.
 
 
 
+```{r cv-acc,fig.cap="The accuracies across folds, the average accuracies across folds, and the test accurary for each classification model with two different splitting methods." ,out.width="100%",echo=FALSE}
+knitr::include_graphics("plot/cv-acc.png") 
+```
+
 ```{r}
 
 ```
+
+
+
+
+
+
+
+
+
+
+
