@@ -71,7 +71,7 @@ For the three images in Figure \@ref(fig:labeled-images), each of them may have 
 knitr::include_graphics("plot/split-result.png") 
 ```
 
-To enlarge the gap between the features of not cloud data and features of cloud data, we drop blocks which are not purely not cloud or cloud. it means that we drop all data points around the boundaries between different labels (in Figure \@ref(fig:margin-remove)), and everything else is the same as the first splitting method.
+To enlarge the gap between the features of not cloud data and features of cloud data, we drop blocks which are not purely not cloud or cloud. it means that we drop all data points around the boundaries between different labels (in Figure \@ref(fig:margin-remove)), and everything else is the same as the first splitting method. 这里改一下说一下testdata和traindata的保留方式不一样
 
 ```{r margin-remove,fig.cap="Image1-3 with removing data points around the boundaries between labels and unlabelled pixels.",echo=FALSE}
 knitr::include_graphics("plot/margin-remove.png") 
@@ -79,7 +79,7 @@ knitr::include_graphics("plot/margin-remove.png")
 
 ### (b)
 
-For test and validation data sets using either one of the two splitting methods, 
+For test and validation data sets using either one of the two splitting methods, the percentage of not cloud is all around $60%$. Therefore
 
 ```{r trivial-classifier,fig.cap="Percentage of not cloud and cloud for validation set and test set of two split method.",out.width="50%",echo=FALSE}
 knitr::include_graphics("plot/trivial-classifier.png") 

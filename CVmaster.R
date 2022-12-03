@@ -7,11 +7,12 @@ group_fun1=function(image0,folds=6,drop_margin=FALSE){
   while(x0<=xmax){
     y0=ymin
     while(y0<=ymax){
+      fold_num=sample(1:folds,1)
       temp_image0=image0%>%
         filter(y>=y0&y<=(y0+7)
                &x>=x0&x<=(x0+7)
                &label!=0)
-      if(drop_margin){
+      if(drop_margin&fold_num!=folds){
         numrow=image0%>%
           filter(y>=y0&y<=(y0+7)
                  &x>=x0&x<=(x0+7))%>%
@@ -26,7 +27,7 @@ group_fun1=function(image0,folds=6,drop_margin=FALSE){
       }
       if(nrow(temp_image0)!=0){
         temp_image0=temp_image0%>%
-          mutate(fold=sample(1:folds,1))
+          mutate(fold=fold_num)
         group_image0=rbind(group_image0,temp_image0)
       }
       y0=y0+8
