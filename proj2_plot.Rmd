@@ -20,9 +20,11 @@ require(MASS)
 require(e1071)
 require(naivebayes)
 require(class)
+require(caTools)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
+
 ```{r read data, message=F, warning=F, echo=F}
 image1=read.table("data/imagem1.txt")
 colnames(image1)=c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
@@ -34,7 +36,7 @@ colnames(image3)=c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
 
 2(b) percent-table
 ```{r}
-png(file="plot/percent-table.png",units = "in",width=4,
+png(file="plot/percent-table.png",units="in",width=4,
     height=1.2 ,pointsize=12,res=300)
 rbind(image1%>%dplyr::select(3)%>%mutate(image="Image1"),
       image2%>%dplyr::select(3)%>%mutate(image="Image2"),
@@ -56,7 +58,7 @@ dev.off()
 
 1(b) labeled-images
 ```{r}
-png(file="plot/labeled-images.png",units = "in",width=7.5,
+png(file="plot/labeled-images.png",units="in",width=7.5,
     height=3,pointsize=12,res=300)
 p1=rbind(image1%>%dplyr::select(1:3)%>%mutate(image="Image1"),
       image2%>%dplyr::select(1:3)%>%mutate(image="Image2"),
@@ -74,7 +76,7 @@ dev.off()
 ```
 1(c) pairwise-correlations
 ```{r}
-png(file="plot/pairwise-correlations.png",units = "in",width=6,
+png(file="plot/pairwise-correlations.png",units="in",width=6,
     height=4,pointsize=12,res=300)
 df1=rbind(image1,image2,image3)%>%
   dplyr::select(3:11)
@@ -171,7 +173,7 @@ p8=df1%>%
                          "\nCorrelation without unlabelled =",
                          round(cor(df2$label,df2$AN),4)))
 
-p1+p2+p3+p4+p5+p6+p7+p8+plot_layout(nrow=2,byrow = F)
+p1+p2+p3+p4+p5+p6+p7+p8+plot_layout(nrow=2,byrow=F)
 dev.off()
 ```
 
@@ -181,17 +183,17 @@ set.seed(123456)
 group_image1=group_fun1(image1)
 group_image2=group_fun1(image2)
 group_image3=group_fun1(image3)
-group_image1p=group_fun1(image1,drop_margin = TRUE)
-group_image2p=group_fun1(image2,drop_margin = TRUE)
-group_image3p=group_fun1(image3,drop_margin = TRUE)
+group_image1p=group_fun1(image1,drop_margin=TRUE)
+group_image2p=group_fun1(image2,drop_margin=TRUE)
+group_image3p=group_fun1(image3,drop_margin=TRUE)
 
 group_images=rbind(group_image1,group_image2,group_image3)
 group_imagesp=rbind(group_image1p,group_image2p,group_image3p)
 ```
 2(a)
 ```{r}
-png(file="plot/split-result.png",units = "in",width=3,
-    height=2 ,pointsize=12,res=300)
+png(file="plot/split-result.png",units="in",width=3,
+    height=2,pointsize=12,res=300)
 group_images%>%
   dplyr::select(c(3,12))%>%
   group_by(label,fold)%>%
@@ -203,14 +205,14 @@ group_images%>%
          cloud=percent(`1`/sum1,accuracy=0.01),
          Total="100%")%>%
   dplyr::select(c(1,5:7))%>%
-  grid.table( rows = NULL)
+  grid.table(rows=NULL)
 dev.off()
   # knitr::kable(caption = "Percentage of Percentage of not cloud, unlabeled and cloud for each image.")%>%
   # save_kable("plot/percent-table.png")
 ```
 2(a)
 ```{r}
-png(file="plot/margin-remove.png",units = "in",width=7.5,
+png(file="plot/margin-remove.png",units="in",width=7.5,
     height=3,pointsize=12,res=300)
 rbind(group_image1p%>%dplyr::select(1:3)%>%mutate(image="Image1"),
       group_image2p%>%dplyr::select(1:3)%>%mutate(image="Image2"),
@@ -292,7 +294,7 @@ acc2_valid=valid2_data%>%
 png(file="plot/trivial-classifier.png",units = "in",width=4.2,
     height=1.5 ,pointsize=12,res=300)
 rbind(acc1_test,acc1_valid,acc2_test,acc2_valid)%>%
-  grid.table( rows = NULL)
+  grid.table(rows=NULL)
 dev.off()
 ```
 2(c)
@@ -302,10 +304,10 @@ lr_model=glm(formula=factor(label)~1,
 lr_for=step(lr_model,direction="forward",scope=~NDAI + SD + CORR + DF + CF + BF + AF + AN,steps=100)
 ```
 ```{r}
-png(file="plot/best-features.png",units = "in",width=5.3,
-    height=3 ,pointsize=12,res=300)
+png(file="plot/best-features.png",units="in",width=5.3,
+    height=3,pointsize=12,res=300)
 lr_for$anova%>%
-  grid.table( rows = NULL)
+  grid.table(rows=NULL)
 dev.off()
 
 ```
@@ -346,7 +348,7 @@ colnames(a)=c("classifier","split method",
 png(file="plot/cv-acc.png",units = "in",width=9.6,
     height=3.2 ,pointsize=12,res=300)
 a%>%
-  grid.table( rows = NULL)
+  grid.table(rows=NULL)
 dev.off()
 ```
 
