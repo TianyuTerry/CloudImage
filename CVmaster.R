@@ -139,6 +139,7 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
       test_acc=mean(test_pred==y_test)
     }
   }
-  return(list(perf=c(valid_acc,mean(valid_acc),test_acc),
-              prob=prob.pred))
+  return(list(acc=c(valid_acc,mean(valid_acc),test_acc),
+              prob=prob.pred,
+              gold=y_test))
 }

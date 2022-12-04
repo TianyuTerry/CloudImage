@@ -21,6 +21,7 @@ require(e1071)
 require(naivebayes)
 require(class)
 require(caTools)
+library(ROCR)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -330,29 +331,47 @@ NB_acc2=CVmaster(generic_fun="NaiveBayes",X,y,K,loss_fun="accuracy",drop_margin0
 ```
 3(a)
 ```{r}
-a=rbind(LR_acc1,LR_acc2,
-        QDA_acc1,QDA_acc2,
-        LDA_acc1,LDA_acc2,
-        KNN_acc1,KNN_acc2,
-        NB_acc1,NB_acc2)%>%
+a=rbind(LR_acc1$perf,LR_acc2$perf,
+        QDA_acc1$perf,QDA_acc2$perf,
+        LDA_acc1$perf,LDA_acc2$perf)%>%
   data.frame()%>%
   mutate(`split method`=c("block split","remove margin"))%>%
   mutate(classifier=c("Logistic Regression","Logistic Regression",
                       "QDA","QDA",
-                      "LDA","LDA",
-                      "KNN","KNN",
-                      "Naive Bayes","Naive Bayes"))%>%
+                      "LDA","LDA"))%>%
   dplyr::select(c(9,8,1:7))
 colnames(a)=c("classifier","split method",
               "Fold 1","Fold 2","Fold 3","Fold 4","Fold 5","Average","Test")
 png(file="plot/cv-acc.png",units = "in",width=9.6,
-    height=3.2 ,pointsize=12,res=300)
+    height=3.2,pointsize=12,res=300)
 a%>%
   grid.table(rows=NULL)
 dev.off()
 ```
+3(b)
+```{r}
+perf.all=data.frame()
+split1.list=c(LR_acc1,QDA_acc1,LDA_acc2)
+split1.name=c("LR", "QDA", "LDA")
+for(i in seq_along(split1.list)){
+  res=split1.list[i]
+  pred=prediction(res$prob,res$gold)
+  perf=performance(pred,"tpr","fpr")
+  model.perf=data.frame(slot(perf, "x.name")=slot(perf, "x.values"),
+                        slot(perf, "y.name")=slot(perf, "y.values"),
+                        slot(perf, "alpha.name")=slot(perf, "alpha.values"),
+                        model=split1.name[i])
+  perf.all=rbind(perf.all,model.perf)
+}
+```
+```{r}
+slotNames(perf)
+```
 
-
+```{r}
+slot(perf, "alpha.name")
+slot(perf, "alpha.values")
+```
 
 
 
