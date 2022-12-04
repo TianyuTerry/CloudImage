@@ -37,6 +37,47 @@ group_fun1=function(image0,folds=6,drop_margin=FALSE){
   }
   return(group_image0)
 }
+# group pixels in blocks and assign group number, not done yet.
+group_fun=function(img,size){
+  ymin=min(img$y);ymax=max(img$y)
+  xmin=min(img$x);xmax=max(img$x)
+  group_image=data.frame()
+  x=xmin
+  while(x<=xmax){
+    y=ymin
+    while(y0<=ymax){
+      fold_num=sample(1:folds,1)
+      temp_image0=image0%>%
+        filter(y>=y0&y<=(y0+7)
+               &x>=x0&x<=(x0+7)
+               &label!=0)
+      if(drop_margin&fold_num!=folds){
+        numrow=image0%>%
+          filter(y>=y0&y<=(y0+7)
+                 &x>=x0&x<=(x0+7))%>%
+          nrow()
+        label_sum=temp_image0%>%
+          dplyr::select(label)%>%
+          sum()%>%
+          abs()
+        if(label_sum!=numrow){
+          temp_image0=data.frame()
+        }
+      }
+      if(nrow(temp_image0)!=0){
+        temp_image0=temp_image0%>%
+          mutate(fold=fold_num)
+        group_image0=rbind(group_image0,temp_image0)
+      }
+      y0=y0+8
+    }
+    x0=x0+8
+    #print(x)
+  }
+  retu
+}
+
+
 CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=FALSE){
   train_model="factor(label)~NDAI+CORR+SD"
   CV_data=cbind(X,y)
