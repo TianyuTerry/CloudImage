@@ -74,7 +74,7 @@ group_fun=function(img,size){
     x0=x0+8
     #print(x)
   }
-  retu
+  return(0)
 }
 
 
@@ -89,7 +89,7 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     y_valid=valid_data%>%dplyr::select(label)
     if(generic_fun=="logistics"){
       clf=glm(train_model,train_data,family = "binomial")
-      valid_pred=predict(clf,valid_data)
+      valid_pred=predict(clf,valid_data,type="reponse")
       if(loss_fun=="accuracy"){
         valid_pred=sign(valid_pred-0.5)
         valid_acc=c(valid_acc,mean(valid_pred==y_valid))
@@ -109,63 +109,36 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
         valid_acc=c(valid_acc,mean(valid_pred==y_valid))
       }
     }
-    if(generic_fun=="KNN"){
-      train_knn=train_data%>%dplyr::select(label:CORR)
-      valid_knn=valid_data%>%dplyr::select(label:CORR)
-      valid_pred=knn(train_knn,valid_knn,k=5,cl=train_knn$label)
-      if(loss_fun=="accuracy"){
-        y_test=valid_knn%>%dplyr::select(label)
-        valid_acc=c(valid_acc,mean(y_test$label==valid_pred))
-      }
-    }
-    if(generic_fun=="NaiveBayes"){
-      clf=naiveBayes(formula=as.formula(train_model),data=train_data)
-      valid_pred=list(predict(clf,valid_data))
-      if(loss_fun=="accuracy"){
-        valid_acc=c(valid_acc,mean(valid_pred==y_valid))
-      }
-    }
   }
   train_data=group_data%>%filter(fold!=K)
   test_data=group_data%>%filter(fold==K)
   y_test=test_data%>%dplyr::select(label)
   if(generic_fun=="logistics"){
-    clf=glm(train_model,train_data,family = "binomial")
-    test_pred=predict(clf,test_data)
+    clf=glm(train_model,train_data,family="binomial")
+    prob.pred=predict(clf,test_data,type="response")
     if(loss_fun=="accuracy"){
-      test_pred=sign(test_pred-0.5)
+      test_pred=sign(clf.pred-0.5)
       test_acc=mean(test_pred==y_test)
     }
   }
   if(generic_fun=="QDA"){
     clf=qda(formula=as.formula(train_model),data=train_data)
-    test_pred=list(predict(clf,test_data)$class)
+    clf.pred=predict(clf,test_data)
+    test_pred=clf.pred$class
+    prob.pred=clf.pred$posterior[,2]
     if(loss_fun=="accuracy"){
       test_acc=mean(test_pred==y_test)
     }
   }
   if(generic_fun=="LDA"){
     clf=lda(formula=as.formula(train_model),data=train_data)
-    test_pred=list(predict(clf,test_data)$class)
+    clf.pred=predict(clf,test_data)
+    test_pred=clf.pred$class
+    prob.pred=clf.pred$posterior[,2]
     if(loss_fun=="accuracy"){
       test_acc=mean(test_pred==y_test)
     }
   }
-  if(generic_fun=="KNN"){
-    train_knn=train_data%>%dplyr::select(label:CORR)
-    test_data=test_data%>%dplyr::select(label:CORR)
-    test_pred=knn(train_knn,test_data,k=5,cl=train_knn$label)
-    if(loss_fun=="accuracy"){
-      y_test=test_data%>%dplyr::select(label)
-      test_acc=mean(y_test$label==test_pred)
-    }
-  }
-  if(generic_fun=="NaiveBayes"){
-    clf=naiveBayes(formula=as.formula(train_model),data=train_data)
-    test_pred=list(predict(clf,test_data))
-    if(loss_fun=="accuracy"){
-      test_acc=mean(test_pred==y_test)
-    }
-  }
-  return(c(valid_acc,mean(valid_acc),test_acc))
+  return(list(perf=c(valid_acc,mean(valid_acc),test_acc),
+              prob=prob.pred))
 }
