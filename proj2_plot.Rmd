@@ -87,7 +87,8 @@ ggally_mysmooth <- function(data, mapping, ...){
     geom_density(  fill=NA)
 }
 df1=rbind(image1,image2,image3)%>%
-  dplyr::select(3:11)
+  dplyr::select(3:11)%>%
+  filter(label!=0)
 df1%>%
   #dplyr::select(2:9)%>%
   ggpairs(mapping = ggplot2::aes(color=factor(label)),

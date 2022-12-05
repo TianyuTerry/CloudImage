@@ -50,7 +50,10 @@ Well-labeled maps are shown in Figure \@ref(fig:labeled-images). Based on the la
 ```{r labeled-images,fig.cap="Image1-3 with expert labelled.",echo=FALSE}
 knitr::include_graphics("plot/labeled-images.png") 
 ```
+
 ### (c)
+
+Befoer
 
 See Figure \@ref(fig:pairwise-correlations). 
 ```{r pairwise-correlations,fig.cap="Pairwise relationships between the three features", echo=FALSE,out.width="100%"}
