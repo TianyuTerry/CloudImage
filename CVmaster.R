@@ -128,7 +128,9 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     test_pred=sign(prob_pred-0.5)
   }
   res=list(prob=prob_pred,
-           gold=y_test)
+           gold=y_test,
+           test=test_data,
+           model=clf)
   if("accuracy"%in%loss_fun){
     test_acc=mean(test_pred==y_test)
     res$acc=c(valid_acc,mean(valid_acc),test_acc)
