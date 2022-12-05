@@ -37,45 +37,30 @@ group_fun1=function(image0,folds=6,drop_margin=FALSE){
   }
   return(group_image0)
 }
-# group pixels in blocks and assign group number, not done yet.
+# group pixels in blocks and assign group number for each image.
 group_fun=function(img,size){
   ymin=min(img$y);ymax=max(img$y)
   xmin=min(img$x);xmax=max(img$x)
   group_image=data.frame()
+  grp=1
   x=xmin
   while(x<=xmax){
     y=ymin
     while(y0<=ymax){
-      fold_num=sample(1:folds,1)
-      temp_image0=image0%>%
-        filter(y>=y0&y<=(y0+7)
-               &x>=x0&x<=(x0+7)
-               &label!=0)
-      if(drop_margin&fold_num!=folds){
-        numrow=image0%>%
-          filter(y>=y0&y<=(y0+7)
-                 &x>=x0&x<=(x0+7))%>%
-          nrow()
-        label_sum=temp_image0%>%
-          dplyr::select(label)%>%
-          sum()%>%
-          abs()
-        if(label_sum!=numrow){
-          temp_image0=data.frame()
-        }
-      }
-      if(nrow(temp_image0)!=0){
-        temp_image0=temp_image0%>%
-          mutate(fold=fold_num)
-        group_image0=rbind(group_image0,temp_image0)
-      }
-      y0=y0+8
+      block=image0%>%
+        filter(y>=y0&y<=(y0+size-1)
+               &x>=x0&x<=(x0+size-1)
+               &label!=0)%>%
+        mutate(group=grp)
+      group_image=rbind(group_image,block)
+      y0=y0+size
+      grp=grp+1
     }
-    x0=x0+8
-    #print(x)
+    x0=x0+size
   }
-  return(0)
+  return(group_image)
 }
+# combine images together and split into train/val/test
 
 
 CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=FALSE){
@@ -86,60 +71,73 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
   for(i in 1:(K-1)){
     train_data=group_data%>%filter(fold!=i&fold!=K)
     valid_data=group_data%>%filter(fold==i)
-    y_valid=valid_data%>%dplyr::select(label)
+    y_valid=valid_data$label
     if(generic_fun=="logistics"){
-      clf=glm(train_model,train_data,family = "binomial")
-      valid_pred=predict(clf,valid_data,type="reponse")
-      if(loss_fun=="accuracy"){
-        valid_pred=sign(valid_pred-0.5)
-        valid_acc=c(valid_acc,mean(valid_pred==y_valid))
-      }
+      clf=glm(as.formula(train_model),train_data,family="binomial")
+      valid_pred=predict(clf,valid_data,type="response")
+      valid_pred=sign(valid_pred-0.5)
     }
-    if(generic_fun=="QDA"){
+    else if(generic_fun=="QDA"){
       clf=qda(formula=as.formula(train_model),data=train_data)
-      valid_pred=list(predict(clf,valid_data)$class)
-      if(loss_fun=="accuracy"){
-        valid_acc=c(valid_acc,mean(valid_pred==y_valid))
-      }
+      valid_pred=as.numeric(as.character(predict(clf,valid_data)$class))
     }
-    if(generic_fun=="LDA"){
+    else if(generic_fun=="LDA"){
       clf=lda(formula=as.formula(train_model),data=train_data)
-      valid_pred=list(predict(clf,valid_data)$class)
-      if(loss_fun=="accuracy"){
-        valid_acc=c(valid_acc,mean(valid_pred==y_valid))
-      }
+      valid_pred=as.numeric(as.character(predict(clf,valid_data)$class))
+    }
+    else if(generic_fun=="NB"){
+      clf=naive_bayes(as.formula(train_model),data=train_data,usekernel=T) 
+      valid_pred=sign(predict(clf,valid_data,type='prob')[,2]-0.5)
+    }
+    else if(generic_fun=="CART"){
+      model=rpart(as.formula(train_model),data=train_data,method="class") 
+      valid_pred=sign(predict(model,valid_data,type='prob')[,2]-0.5)
+    }
+    if("accuracy"%in%loss_fun){
+      valid_acc=c(valid_acc,mean(valid_pred==y_valid))
     }
   }
   train_data=group_data%>%filter(fold!=K)
   test_data=group_data%>%filter(fold==K)
-  y_test=test_data%>%dplyr::select(label)
+  y_test=as.numeric(test_data$label)
   if(generic_fun=="logistics"){
-    clf=glm(train_model,train_data,family="binomial")
-    prob.pred=predict(clf,test_data,type="response")
-    if(loss_fun=="accuracy"){
-      test_pred=sign(clf.pred-0.5)
-      test_acc=mean(test_pred==y_test)
-    }
+    clf=glm(as.formula(train_model),train_data,family="binomial")
+    prob_pred=predict(clf,test_data,type="response")
+    test_pred=sign(prob_pred-0.5)
   }
-  if(generic_fun=="QDA"){
+  else if(generic_fun=="QDA"){
     clf=qda(formula=as.formula(train_model),data=train_data)
-    clf.pred=predict(clf,test_data)
-    test_pred=clf.pred$class
-    prob.pred=clf.pred$posterior[,2]
-    if(loss_fun=="accuracy"){
-      test_acc=mean(test_pred==y_test)
-    }
+    clf_pred=predict(clf,test_data)
+    test_pred=as.numeric(as.character(clf_pred$class))
+    prob_pred=clf_pred$posterior[,2]
   }
-  if(generic_fun=="LDA"){
+  else if(generic_fun=="LDA"){
     clf=lda(formula=as.formula(train_model),data=train_data)
-    clf.pred=predict(clf,test_data)
-    test_pred=clf.pred$class
-    prob.pred=clf.pred$posterior[,2]
-    if(loss_fun=="accuracy"){
-      test_acc=mean(test_pred==y_test)
-    }
+    clf_pred=predict(clf,test_data)
+    test_pred=as.numeric(as.character(clf_pred$class))
+    prob_pred=clf_pred$posterior[,2]
   }
-  return(list(acc=c(valid_acc,mean(valid_acc),test_acc),
-              prob=prob.pred,
-              gold=y_test))
+  else if(generic_fun=="NB"){
+    clf=naive_bayes(as.formula(train_model),data=train_data,usekernel=T) 
+    prob_pred=predict(clf,test_data,type='prob')[,2]
+    test_pred=sign(prob_pred-0.5)
+  }
+  else if(generic_fun=="CART"){
+    clf=rpart(as.formula(train_model),data=train_data,method="class") 
+    prob_pred=predict(clf,test_data,type='prob')[,2]
+    test_pred=sign(prob_pred-0.5)
+  }
+  res=list(prob=prob_pred,
+           gold=y_test)
+  if("accuracy"%in%loss_fun){
+    test_acc=mean(test_pred==y_test)
+    res$acc=c(valid_acc,mean(valid_acc),test_acc)
+  }
+  if("prf"%in%loss_fun){
+    precision=posPredValue(as.factor(test_pred),as.factor(y_test),positive=1)
+    recall=sensitivity(as.factor(test_pred),as.factor(y_test),positive=1)
+    f1=(2*precision*recall)/(precision+recall)
+    res$prf=c(precision,recall,f1)
+  }
+  return(res)
 }
