@@ -139,5 +139,10 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     f1=(2*precision*recall)/(precision+recall)
     res$prf=c(precision,recall,f1)
   }
+  if("auc"%in%loss_fun){
+    pred=prediction(prob_pred,y_test)
+    perf=performance(pred,"auc")
+    res$auc=slot(perf,"y.values")[[1]]
+  }
   return(res)
 }
