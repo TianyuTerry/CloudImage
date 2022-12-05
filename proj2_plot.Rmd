@@ -348,7 +348,7 @@ a=rbind(LR_acc1$acc,LR_acc2$acc,
   dplyr::select(c(9,8,1:7))
 colnames(a)=c("classifier","split method",
               "Fold 1","Fold 2","Fold 3","Fold 4","Fold 5","Average","Test")
-png(file="plot/cv-acc.png",units = "in",width=9.6,
+png(file="plot/cv-acc.png",units="in",width=9.6,
     height=3.2,pointsize=12,res=300)
 a%>%
   grid.table(rows=NULL)
@@ -376,13 +376,13 @@ cutoff=perf.all%>%
          group_by(model)%>%
          filter(diff==min(diff))%>%
          dplyr::select(model,Cutoff)
-```
-
-```{r}
+png(file="plot/roc.png",units="in",width=5,
+    height=4 ,pointsize=12,res=300)
 perf.all%>%
   ggplot(aes(x=`False positive rate`,y=`True positive rate`))+
   geom_line(aes(group=model,color=model))+
   geom_point(data=merge(perf.all,cutoff,by=c("model","Cutoff")),aes(color=model),shape=4,size=3)
+dev.off()
 ```
 3(c)
 ```{r}
@@ -400,8 +400,8 @@ b=rbind(LR_acc1$prf,LR_acc2$prf,
                       "CART","CART"))%>%
   dplyr::select(classifier,`split method`,1:3)
 colnames(b)=c("classifier","split method",
-              "precision", "recall", "f1")
-png(file="plot/test-prf.png",units = "in",width=6,
+              "precision","recall","f1")
+png(file="plot/test-prf.png",units="in",width=6,
     height=3.2,pointsize=12,res=300)
 b%>%
   grid.table(rows=NULL)
