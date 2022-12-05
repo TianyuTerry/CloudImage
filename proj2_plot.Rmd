@@ -21,7 +21,9 @@ require(e1071)
 require(naivebayes)
 require(class)
 require(caTools)
-library(ROCR)
+require(ROCR)
+require(caret)
+require(rpart)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -318,27 +320,31 @@ images=rbind(image1,image2,image3)
 X=images%>%dplyr::select(-label)
 y=images%>%dplyr::select(label)
 K=6
-LR_acc1=CVmaster(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=FALSE)
-LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=TRUE)
-QDA_acc1=CVmaster(generic_fun="QDA",X,y,K,loss_fun="accuracy",drop_margin0=FALSE)
-QDA_acc2=CVmaster(generic_fun="QDA",X,y,K,loss_fun="accuracy",drop_margin0=TRUE)
-LDA_acc1=CVmaster(generic_fun="LDA",X,y,K,loss_fun="accuracy",drop_margin0=FALSE)
-LDA_acc2=CVmaster(generic_fun="LDA",X,y,K,loss_fun="accuracy",drop_margin0=TRUE)
-KNN_acc1=CVmaster(generic_fun="KNN",X,y,K,loss_fun="accuracy",drop_margin0=FALSE)
-KNN_acc2=CVmaster(generic_fun="KNN",X,y,K,loss_fun="accuracy",drop_margin0=TRUE)
-NB_acc1=CVmaster(generic_fun="NaiveBayes",X,y,K,loss_fun="accuracy",drop_margin0=FALSE)
-NB_acc2=CVmaster(generic_fun="NaiveBayes",X,y,K,loss_fun="accuracy",drop_margin0=TRUE)
+LR_acc1=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=FALSE)
+LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=TRUE)
+QDA_acc1=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=FALSE)
+QDA_acc2=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=TRUE)
+LDA_acc1=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=FALSE)
+LDA_acc2=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=TRUE)
+NB_acc1=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=FALSE)
+NB_acc2=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=TRUE)
+CART_acc1=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=FALSE)
+CART_acc2=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf"),drop_margin0=TRUE)
 ```
 3(a)
 ```{r}
-a=rbind(LR_acc1$perf,LR_acc2$perf,
-        QDA_acc1$perf,QDA_acc2$perf,
-        LDA_acc1$perf,LDA_acc2$perf)%>%
+a=rbind(LR_acc1$acc,LR_acc2$acc,
+        QDA_acc1$acc,QDA_acc2$acc,
+        LDA_acc1$acc,LDA_acc2$acc,
+        NB_acc1$acc,NB_acc2$acc,
+        CART_acc1$acc,CART_acc2$acc)%>%
   data.frame()%>%
   mutate(`split method`=c("block split","remove margin"))%>%
   mutate(classifier=c("Logistic Regression","Logistic Regression",
                       "QDA","QDA",
-                      "LDA","LDA"))%>%
+                      "LDA","LDA",
+                      "NB","NB",
+                      "CART","CART"))%>%
   dplyr::select(c(9,8,1:7))
 colnames(a)=c("classifier","split method",
               "Fold 1","Fold 2","Fold 3","Fold 4","Fold 5","Average","Test")
@@ -351,26 +357,55 @@ dev.off()
 3(b)
 ```{r}
 perf.all=data.frame()
-split1.list=c(LR_acc1,QDA_acc1,LDA_acc2)
-split1.name=c("LR", "QDA", "LDA")
-for(i in seq_along(split1.list)){
-  res=split1.list[i]
+split1.list=list(LR_acc1,QDA_acc1,LDA_acc1,NB_acc1,CART_acc1)
+split1.name=c("LR","QDA","LDA","NB","CART")
+for (i in seq_along(split1.list)){
+  res=split1.list[[i]]
   pred=prediction(res$prob,res$gold)
   perf=performance(pred,"tpr","fpr")
-  model.perf=data.frame(slot(perf, "x.name")=slot(perf, "x.values"),
-                        slot(perf, "y.name")=slot(perf, "y.values"),
-                        slot(perf, "alpha.name")=slot(perf, "alpha.values"),
-                        model=split1.name[i])
+  model.perf<-data.frame(slot(perf,"x.values")[[1]],
+                        slot(perf,"y.values")[[1]],
+                        slot(perf,"alpha.values")[[1]],
+                        split1.name[i])
+  colnames(model.perf)=c(slot(perf,"x.name"),slot(perf,"y.name"),
+                         slot(perf,"alpha.name"),"model")
   perf.all=rbind(perf.all,model.perf)
 }
-```
-```{r}
-slotNames(perf)
+cutoff=perf.all%>%
+         mutate(diff=abs(Cutoff-0.5))%>%
+         group_by(model)%>%
+         filter(diff==min(diff))%>%
+         dplyr::select(model,Cutoff)
 ```
 
 ```{r}
-slot(perf, "alpha.name")
-slot(perf, "alpha.values")
+perf.all%>%
+  ggplot(aes(x=`False positive rate`,y=`True positive rate`))+
+  geom_line(aes(group=model,color=model))+
+  geom_point(data=merge(perf.all,cutoff,by=c("model","Cutoff")),aes(color=model),shape=4,size=3)
+```
+3(c)
+```{r}
+b=rbind(LR_acc1$prf,LR_acc2$prf,
+        QDA_acc1$prf,QDA_acc2$prf,
+        LDA_acc1$prf,LDA_acc2$prf,
+        NB_acc1$prf,NB_acc2$prf,
+        CART_acc1$prf,CART_acc2$prf)%>%
+  data.frame()%>%
+  mutate(`split method`=c("block split","remove margin"))%>%
+  mutate(classifier=c("Logistic Regression","Logistic Regression",
+                      "QDA","QDA",
+                      "LDA","LDA",
+                      "NB","NB",
+                      "CART","CART"))%>%
+  dplyr::select(classifier,`split method`,1:3)
+colnames(b)=c("classifier","split method",
+              "precision", "recall", "f1")
+png(file="plot/test-prf.png",units = "in",width=6,
+    height=3.2,pointsize=12,res=300)
+b%>%
+  grid.table(rows=NULL)
+dev.off()
 ```
 
 
