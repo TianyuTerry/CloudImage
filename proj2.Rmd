@@ -31,7 +31,7 @@ knitr::opts_chunk$set(fig.align = 'center')
 
 ### (a)
 
-The key purpose of the paper *Daytime Arctic Cloud Detection Based on Multi-Angle Satellite Data With Case Studies* is to build an algorithm in order to ascertain whether a pixel of satellite images of Arctic is covered by cloud or not. Since the surfaces of cloud in Arctic are similar to those of Arctic surface, it is challenging to tell the difference between cloud and Arctic surface. The satellite images or the data used by the authors are shot by NASA Terra Satellite. The satellite comprises nine cameras with nine different angles in four spectral bands.
+The key purpose of the paper *Daytime Arctic Cloud Detection Based on Multi-Angle Satellite Data With Case Studies* is to build an algorithm in order to ascertain whether a pixel of satellite images of Arctic is covered by cloud or not. Since the surfaces of cloud in Arctic are similar to those of the Arctic surface, it is challenging to tell the difference between cloud and Arctic surface. The satellite images or the data used by the authors are shot by NASA Terra Satellite. The satellite comprises nine cameras with nine different angles in four spectral bands.
 
 The data are collected from 10 MISR (Multiangle Imaging Spectro Radiometer) orbits of path 26 over the Arctic, northern Greenland, and Baffin Bay. This path is selected due to its richness of surface features. Six data units from each orbit are included in this study, and three of the total 60 units are excluded since the sea ice melts in the summer and affect the MISR operational algorithm. To evaluate the performance of the study, one of the authors hand-labels the image pixels as either clear or cloudy. Around 71.5% (5086002) of the pixels are labeled in total; the others are left unlabeled due to ambiguity.
 
@@ -53,7 +53,7 @@ knitr::include_graphics("plot/labeled-images.png")
 ### (c)
 
 See Figure \@ref(fig:pairwise-correlations). 
-```{r pairwise-correlations,fig.cap="Pairwise relationships between the three features", echo=FALSE,out.width="75%"}
+```{r pairwise-correlations,fig.cap="Pairwise relationships between the three features", echo=FALSE,out.width="100%"}
 knitr::include_graphics("plot/pairwise-correlations.png") 
 ```
 See Figure \@ref(fig:label-feature1).
@@ -71,7 +71,7 @@ For the three images in Figure \@ref(fig:labeled-images), each of them may have 
 knitr::include_graphics("plot/split-result.png") 
 ```
 
-To enlarge the gap between the features of not cloud data and features of cloud data, we drop blocks which are not purely not cloud or cloud. it means that we drop all data points around the boundaries between different labels (in Figure \@ref(fig:margin-remove)), and everything else is the same as the first splitting method. 这里改一下说一下testdata和traindata的保留方式不一样
+To enlarge the gap between the features of not cloud data and features of cloud data, we drop blocks which are not purely not cloud or cloud. it means that we drop all data points around the boundaries between different labels (in Figure \@ref(fig:margin-remove)), and everything else is the same as the first splitting method.
 
 ```{r margin-remove,fig.cap="Image1-3 with removing data points around the boundaries between labels and unlabelled pixels.",echo=FALSE}
 knitr::include_graphics("plot/margin-remove.png") 
@@ -79,7 +79,7 @@ knitr::include_graphics("plot/margin-remove.png")
 
 ### (b)
 
-For test and validation data sets using either one of the two splitting methods, the percentage of not cloud is all around $60%$. Therefore
+For test and validation data sets using either one of the two splitting methods, the percentage of not cloud is all around $60%$ (in Figure \@ref(fig:trivial-classifier)). Therefore, the accuracy of a trivial classifier, which sets all labels to $-1$, would also be around $60%$ for the validation set and test set, regardless of splitting method. The accuracy of a trivial classifier would be high, if the data set is imbalanced. For example, if $99%$ of the data set are labelled as not cloud, the accuracy of the trivial classifier would be $99%$. Concretely, our data sets are relatively balanced, so more fancier classifiers are necessary to achieve a higher accuracy. 
 
 ```{r trivial-classifier,fig.cap="Percentage of not cloud and cloud for validation set and test set of two split method.",out.width="50%",echo=FALSE}
 knitr::include_graphics("plot/trivial-classifier.png") 
@@ -87,7 +87,7 @@ knitr::include_graphics("plot/trivial-classifier.png")
 
 ### (c)
 
-By performing the logistic regression forward selection on all features (in Figure \@ref(fig:best-features)), NDAI, CORR, and SD are three of the "best" features. With adding NDAI, CORR, and SD to the training model, AIC drop significantly.
+By performing the logistic regression forward selection on all features (in Figure \@ref(fig:best-features)), NDAI, CORR, and SD are three of the "best" features. With adding NDAI, CORR, and SD to the training model, AIC drops significantly. According to *Daytime Arctic Cloud Detection Based on Multi-Angle Satellite Data With Case Studies*, these three features are computed with all radiations of nine angels, so these three features include some information of the other features, DF, BF, AN, CF and AF. Also, the three features of each pixel are based on the nine radiation values of pixels around that pixel, so these three features also include some information of its neighbors. As a result, neighbors are more likely to be classified into the same category. In the following questions, only these three features are used to train classification models.
 
 ```{r best-features,fig.cap="Result of logistic regression forward selection on all features." ,out.width="60%",echo=FALSE}
 knitr::include_graphics("plot/best-features.png") 
