@@ -24,6 +24,8 @@ require(caTools)
 require(ROCR)
 require(caret)
 require(rpart)
+require(car)
+require(FactoMineR)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -454,45 +456,109 @@ pca_prcomp <- prcomp(train_x,scale.=TRUE)
 summary(pca_prcomp)
 ```
 ```{r}
-data_pca=as.data.frame(cbind(pca_prcomp$x[,1:2],
-                             train_data$label,
-                             sign(LR_acc1$score-0.5)))
-colnames(data_pca)=c("PC1","PC2","label","pred")
-data_pca_eval=data_pca%>%mutate(eval=case_when(pred==label&label==1~"TP",
-                                                 pred==label&label==-1~"TN",
-                                                 pred!=label&pred==1~"FP",
-                                                 TRUE~"FN"))
-NDAI=seq(min(train_x$NDAI),max(train_x$NDAI),length.out=300)
-CORR=seq(min(train_x$CORR),max(train_x$CORR),length.out=300)
-# boundary=expand.grid(NDAI,CORR)
-boundary=data.frame(NDAI,CORR)
-colnames(boundary)=c("NDAI","CORR")
-boundary$SD=SD=(-coef(model)[1]-coef(model)[2]*NDAI-coef(model)[3]*CORR)/coef(model)[4]
-boundary=boundary%>%filter(SD>min(train_x$SD)&SD<max(train_x$SD))
-pca_boundary=as.data.frame(predict(pca_prcomp,boundary)[,1:2])
-colnames(pca_boundary)=c("PC1","PC2")
-data_pca_eval%>%
-  ggplot(aes(x=PC1,y=PC2))+
-  geom_point(aes(color=eval),size=0.01)+
-  geom_point(data=pca_boundary,aes(x=PC1,y=PC2),color="black")+
-  guides(color = guide_legend(override.aes=list(size=3)))
+png(file="plot/lr_pca.png",units="in",width=7,
+    height=3,pointsize=12,res=300)
+trn_pca=train_x%>%PCA(graph = FALSE)
+
+proj=trn_pca$ind$coord[,1:2]%>%
+  data.frame()%>%
+  tibble()%>%
+  mutate(label = train_data$label,
+         pred = sign(LR_acc1$score-0.5))%>%
+  mutate(eval=case_when(pred==label&label==1~"TP",
+                        pred==label&label==-1~"TN",
+                        pred!=label&pred==1~"FP",
+                        TRUE~"FN"))
+
+p1=proj%>% 
+  ggplot(aes(x = Dim.1, y = Dim.2))+
+  geom_point(aes(color=eval),size=0.00001)+
+  labs(x="PC1",y="PC2",title="PCA Projections")+
+  guides(color=guide_legend(override.aes=list(size=2)))+
+  theme_bw()
+
+p2=plot(trn_pca,choix="var")
+p1+p2
+
+dev.off()
 ```
 ```{r}
-# mydata <- mydata %>%
-#   mutate(logit = log(probabilities/(1-probabilities))) %>%
-#   gather(key = "predictors", value = "predictor.value", -logit)
+# dim1 <- seq(from = -8, to = 12, length = 100)
+# dim2 <- seq(from = -8, to = 5, length = 100)
+# low_dim <- as.matrix(expand.grid(dim1, dim2))
+# 
+# means <- colMeans(train_x)
+# means_mat <- matrix(means, nrow = 10000, ncol = 3, byrow = TRUE)
+# sds <- apply(train_x, 2, sd)
+# sd_mat <- matrix(sds, nrow = 10000, ncol = 3, byrow = TRUE)
+# data_high <- low_dim %*% t(trn_pca$svd$V[, 1:2]) * sd_mat + means_mat
+# data_high <- data.frame(data_high)
+# colnames(data_high) <- rownames(trn_pca$var$contrib)
+# preds_proj <- sign(predict(LR_acc1$model, newdata = data.frame(data_high), type="response")-0.5)
+# 
+# plot_boundary <- data.frame(low_dim)
+# colnames(plot_boundary) <- c("Dim.1", "Dim.2")
+# 
+# plot_boundary |> 
+#   tibble() |> 
+#   mutate(label = preds_proj) |> 
+#   ggplot(aes(x = Dim.1, y = Dim.2, color = as.factor(label))) +
+#   geom_point(alpha = 0.5, size=0.1) +
+#   geom_point(data = proj, shape = 18, size = 0.01,alpha=0.1) +
+#   labs(
+#     x = "PC1", y = "PC2", title = "PCA Projection of LDA Decision Boundary"
+#     ) +
+#   theme_bw()
 ```
+
 ```{r}
+# data_pca=as.data.frame(cbind(pca_prcomp$x[,1:2],
+#                              train_data$label,
+#                              sign(LR_acc1$score-0.5)))
+# colnames(data_pca)=c("PC1","PC2","label","pred")
+# data_pca_eval=data_pca%>%mutate(eval=case_when(pred==label&label==1~"TP",
+#                                                  pred==label&label==-1~"TN",
+#                                                  pred!=label&pred==1~"FP",
+#                                                  TRUE~"FN"))
+# NDAI=seq(min(train_x$NDAI),max(train_x$NDAI),length.out=300)
+# CORR=seq(min(train_x$CORR),max(train_x$CORR),length.out=300)
+# # boundary=expand.grid(NDAI,CORR)
+# boundary=data.frame(NDAI,CORR)
+# colnames(boundary)=c("NDAI","CORR")
+# boundary$SD=SD=(-coef(model)[1]-coef(model)[2]*NDAI-coef(model)[3]*CORR)/coef(model)[4]
+# boundary=boundary%>%filter(SD>min(train_x$SD)&SD<max(train_x$SD))
+# pca_boundary=as.data.frame(predict(pca_prcomp,boundary)[,1:2])
+# colnames(pca_boundary)=c("PC1","PC2")
+# data_pca_eval%>%
+#   ggplot(aes(x=PC1,y=PC2))+
+#   geom_point(aes(color=eval),size=0.01)+
+#   geom_point(data=pca_boundary,aes(x=PC1,y=PC2),color="black")+
+#   guides(color = guide_legend(override.aes=list(size=3)))
+```
+
+```{r}
+png(file="plot/lr_linearity.png",units="in",width=7,
+    height=3,pointsize=12,res=300)
 train_x$prob=LR_acc1$score
 predictors=colnames(train_x)
 train_x%>%
   mutate(logit=log(prob/(1-prob)))%>%
+  select(-prob)%>%
+  sample_n(10000)%>%
   gather(key="predictors",value="predictor.value",-logit)%>%
   ggplot(aes(logit,predictor.value))+
-  geom_point(size=0.5,alpha=0.5) +
-  geom_smooth(method="loess") + 
+  geom_point(size=0.01,alpha=0.5)+
+  geom_smooth(method="loess")+
   theme_bw() + 
   facet_wrap(~predictors,scales="free_y")
+dev.off()
+```
+```{r}
+png(file="plot/lr_collinearity.png",units="in",width=5,
+    height=0.5,pointsize=12,res=300)
+data.frame(t(vif(model)))%>%
+  grid.table(row=NULL)
+dev.off()
 ```
 4(b)
 ```{r} 
@@ -518,16 +584,15 @@ test_data_eval%>%
   theme(legend.position="right",legend.title=element_blank())
 dev.off()
 ```
+
 ```{r}
 table(test_data$pred,test_data$label)
 ```
+
 ```{r}
 png(file="plot/misclf_feature.png",units="in",width=8,
     height=3,pointsize=12,res=300)
-```
-```{r}
-```
-```{r}
+
 p1=test_data_eval%>%
   ggplot(aes(x=NDAI,y=SD))+
   geom_point(aes(color=eval),size=0.1)
@@ -543,6 +608,7 @@ p3=test_data_eval%>%
 p1+p2+p3+plot_layout(nrow=1)
 dev.off()
 ```
+
 ```{r}
 png(file="plot/misclf_spatial_qda.png",units="in",width=7,
     height=3,pointsize=12,res=300)
@@ -566,6 +632,7 @@ test_data_eval_qda%>%
   theme(legend.position="right",legend.title=element_blank())
 dev.off()
 ```
+
 ```{r}
 png(file="plot/misclf_feature_qda.png",units="in",width=8,
     height=3,pointsize=12,res=300)
