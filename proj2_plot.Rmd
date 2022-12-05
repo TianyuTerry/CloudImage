@@ -428,21 +428,83 @@ dev.off()
 4(a)
 ```{r}
 model=LR_acc1$model
-data=LR_acc1$
-mydata <- mydata %>%
-  mutate(logit = log(probabilities/(1-probabilities))) %>%
-  gather(key = "predictors", value = "predictor.value", -logit)
+summary(model)
+```
+```{r}
+png(file="plot/lr_coef.png",units="in",width=5.5,
+    height=2,pointsize=12,res=300)
+coef(summary(model))[,c(1,3,4)]%>%
+  grid.table()
+dev.off()
+```
+```{r}
+png(file="plot/lr_smr.png",units="in",width=6,
+    height=1,pointsize=12,res=300)
+data.frame(`No.Iteration`=model$iter,
+           Convergence=model$converged,
+           `Null deviance`=model$null.deviance,
+           `Residual deviance`=model$deviance)%>%
+  grid.table(row=NULL)
+dev.off()
+```
+```{r}
+train_data=LR_acc1$train
+train_x=train_data%>%select(NDAI,CORR,SD)
+pca_prcomp <- prcomp(train_x,scale.=TRUE)
+summary(pca_prcomp)
+```
+```{r}
+data_pca=as.data.frame(cbind(pca_prcomp$x[,1:2],
+                             train_data$label,
+                             sign(LR_acc1$score-0.5)))
+colnames(data_pca)=c("PC1","PC2","label","pred")
+data_pca_eval=data_pca%>%mutate(eval=case_when(pred==label&label==1~"TP",
+                                                 pred==label&label==-1~"TN",
+                                                 pred!=label&pred==1~"FP",
+                                                 TRUE~"FN"))
+NDAI=seq(min(train_x$NDAI),max(train_x$NDAI),length.out=300)
+CORR=seq(min(train_x$CORR),max(train_x$CORR),length.out=300)
+# boundary=expand.grid(NDAI,CORR)
+boundary=data.frame(NDAI,CORR)
+colnames(boundary)=c("NDAI","CORR")
+boundary$SD=SD=(-coef(model)[1]-coef(model)[2]*NDAI-coef(model)[3]*CORR)/coef(model)[4]
+boundary=boundary%>%filter(SD>min(train_x$SD)&SD<max(train_x$SD))
+pca_boundary=as.data.frame(predict(pca_prcomp,boundary)[,1:2])
+colnames(pca_boundary)=c("PC1","PC2")
+data_pca_eval%>%
+  ggplot(aes(x=PC1,y=PC2))+
+  geom_point(aes(color=eval),size=0.01)+
+  geom_point(data=pca_boundary,aes(x=PC1,y=PC2),color="black")+
+  guides(color = guide_legend(override.aes=list(size=3)))
+```
+```{r}
+# mydata <- mydata %>%
+#   mutate(logit = log(probabilities/(1-probabilities))) %>%
+#   gather(key = "predictors", value = "predictor.value", -logit)
+```
+```{r}
+train_x$prob=LR_acc1$score
+predictors=colnames(train_x)
+train_x%>%
+  mutate(logit=log(prob/(1-prob)))%>%
+  gather(key="predictors",value="predictor.value",-logit)%>%
+  ggplot(aes(logit,predictor.value))+
+  geom_point(size=0.5,alpha=0.5) +
+  geom_smooth(method="loess") + 
+  theme_bw() + 
+  facet_wrap(~predictors,scales="free_y")
 ```
 4(b)
 ```{r} 
 png(file="plot/misclf_spatial.png",units="in",width=7,
     height=3,pointsize=12,res=300)
-test_data=LR_acc1$test
-test_data$pred=sign(LR_acc1$prob-0.5)
-test_data%>%mutate(eval=case_when(pred==label&label==1~"TP",
-                                  pred==label&label==-1~"TN",
-                                  pred!=label&pred==1~"FP",
-                                  TRUE~"FN"))%>%
+test_data=NB_acc1$test
+test_data$pred=sign(NB_acc1$prob-0.5)
+test_data_eval=test_data%>%mutate(eval=case_when(pred==label&label==1~"TP",
+                                                 pred==label&label==-1~"TN",
+                                                 pred!=label&pred==1~"FP",
+                                                 TRUE~"FN"))
+test_data_eval%>% 
   dplyr::select(-c(pred,fold))%>%
   rbind(images%>%filter(label==0)%>%mutate(eval="Unlabeled"))%>%
   ggplot(aes(x,y,color =eval))+
@@ -460,7 +522,73 @@ dev.off()
 table(test_data$pred,test_data$label)
 ```
 ```{r}
+png(file="plot/misclf_feature.png",units="in",width=8,
+    height=3,pointsize=12,res=300)
+```
+```{r}
+```
+```{r}
+p1=test_data_eval%>%
+  ggplot(aes(x=NDAI,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
 
+p2=test_data_eval%>%
+  ggplot(aes(x=NDAI,y=CORR))+
+  geom_point(aes(color=eval),size=0.1)
+
+p3=test_data_eval%>%
+  ggplot(aes(x=CORR,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p1+p2+p3+plot_layout(nrow=1)
+dev.off()
+```
+```{r}
+png(file="plot/misclf_spatial_qda.png",units="in",width=7,
+    height=3,pointsize=12,res=300)
+test_data_qda=QDA_acc1$test
+test_data_qda$pred=sign(QDA_acc1$prob-0.5)
+test_data_eval_qda=test_data_qda%>%mutate(eval=case_when(pred==label&label==1~"TP",
+                                                 pred==label&label==-1~"TN",
+                                                 pred!=label&pred==1~"FP",
+                                                 TRUE~"FN"))
+test_data_eval_qda%>% 
+  dplyr::select(-c(pred,fold))%>%
+  rbind(images%>%filter(label==0)%>%mutate(eval="Unlabeled"))%>%
+  ggplot(aes(x,y,color =eval))+
+  geom_point(shape=15,size=0.00000000000001)+
+  facet_wrap(~image)+
+  coord_fixed()+
+  guides(color = guide_legend(override.aes = list(size = 10)))+
+  labs(x="x coordinate",y="y coordinate")+
+  # scale_color_manual(values=c("#501d8a", "#1c8041", "#e55709"),
+  #                    labels=c("not cloud","unlabeled","cloud"))+
+  theme(legend.position="right",legend.title=element_blank())
+dev.off()
+```
+```{r}
+png(file="plot/misclf_feature_qda.png",units="in",width=8,
+    height=3,pointsize=12,res=300)
+
+p1=test_data_eval_qda%>%
+  ggplot(aes(x=NDAI,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p2=test_data_eval_qda%>%
+  ggplot(aes(x=NDAI,y=CORR))+
+  geom_point(aes(color=eval),size=0.1)
+
+p3=test_data_eval_qda%>%
+  ggplot(aes(x=CORR,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p1+p2+p3+plot_layout(nrow=1)
+dev.off()
+```
+4(c)
+```{r}
+min(images$NDAI)
+min(images$SD)
 ```
 
 

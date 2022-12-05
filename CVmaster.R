@@ -103,6 +103,7 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
   if(generic_fun=="logistics"){
     clf=glm(as.formula(train_model),train_data,family="binomial")
     prob_pred=predict(clf,test_data,type="response")
+    prob_train=predict(clf,train_data,type="response")
     test_pred=sign(prob_pred-0.5)
   }
   else if(generic_fun=="QDA"){
@@ -110,26 +111,32 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     clf_pred=predict(clf,test_data)
     test_pred=as.numeric(as.character(clf_pred$class))
     prob_pred=clf_pred$posterior[,2]
+    prob_train=predict(clf,train_data)$posterior[,2]
   }
   else if(generic_fun=="LDA"){
     clf=lda(formula=as.formula(train_model),data=train_data)
     clf_pred=predict(clf,test_data)
     test_pred=as.numeric(as.character(clf_pred$class))
     prob_pred=clf_pred$posterior[,2]
+    prob_train=predict(clf,train_data)$posterior[,2]
   }
   else if(generic_fun=="NB"){
     clf=naive_bayes(as.formula(train_model),data=train_data,usekernel=T) 
     prob_pred=predict(clf,test_data,type='prob')[,2]
     test_pred=sign(prob_pred-0.5)
+    prob_train=predict(clf,train_data,type='prob')[,2]
   }
   else if(generic_fun=="CART"){
     clf=rpart(as.formula(train_model),data=train_data,method="class") 
     prob_pred=predict(clf,test_data,type='prob')[,2]
     test_pred=sign(prob_pred-0.5)
+    prob_train=predict(clf,train_data,type='prob')[,2]
   }
   res=list(prob=prob_pred,
            gold=y_test,
            test=test_data,
+           train=train_data,
+           score=prob_train,
            model=clf)
   if("accuracy"%in%loss_fun){
     test_acc=mean(test_pred==y_test)
