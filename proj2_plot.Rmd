@@ -102,8 +102,6 @@ df1%>%
           upper = list(continuous = wrap("cor", size = 2.2)),
           diag = list(continuous = ggally_mysmooth)
           )
-  
-
 dev.off()
 ```
 1(c) label-features
@@ -242,9 +240,9 @@ dev.off()
 ```{r}
 png(file="plot/split-result1.png",units="in",width=7.5,
     height=3,pointsize=12,res=300)
-rbind(group_image1p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
-      group_image2p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
-      group_image3p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image3"))%>%
+rbind(group_image1%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
+      group_image2%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
+      group_image3%>%dplyr::select(c(1,2,12))%>%mutate(image="Image3"))%>%
   ggplot(aes(x,y,color=factor(fold)))+
   geom_point(shape=15,size=0.0000000000000001)+
   facet_wrap(~image)+
@@ -584,8 +582,6 @@ test_data_eval%>%
   coord_fixed()+
   guides(color = guide_legend(override.aes = list(size = 10)))+
   labs(x="x coordinate",y="y coordinate")+
-  # scale_color_manual(values=c("#501d8a", "#1c8041", "#e55709"),
-  #                    labels=c("not cloud","unlabeled","cloud"))+
   theme(legend.position="right",legend.title=element_blank())
 dev.off()
 ```
@@ -611,6 +607,22 @@ p3=test_data_eval%>%
   geom_point(aes(color=eval),size=0.1)
 
 p1+p2+p3+plot_layout(nrow=1)
+dev.off()
+```
+
+```{r}
+png(file="plot/misclf_density.png",units="in",width=8,
+    height=3,pointsize=12,res=300)
+test_data_eval%>% 
+  dplyr::select(NDAI:CORR,eval)%>%
+  pivot_longer(NDAI:CORR,names_to="feature",values_to="value")%>%
+  ggplot(aes(x=value))+
+  geom_density(aes(fill=eval,color=eval),alpha=0.3)+
+  facet_wrap(~feature,scales="free")+
+  # coord_fixed()+
+  guides(color=guide_legend(override.aes=list(size=10)))+
+  labs(x="feature value")+
+  theme(legend.position="right",legend.title=element_blank())
 dev.off()
 ```
 
@@ -745,22 +757,111 @@ LOGLR_acc2=CVmaster(generic_fun="LOGLR",X,y,K,loss_fun=c("accuracy"),group_choic
 ```
 
 ```{r}
+KNN_acc1=CVmaster(generic_fun="KNN",X,y,K,loss_fun=c("accuracy"),drop_margin0=FALSE)
+KNN_acc2=CVmaster(generic_fun="KNN",X,y,K,loss_fun=c("accuracy"),group_choice=2)
+```
+
+```{r}
 e=rbind(RF_acc1$acc,RF_acc2$acc,
         ESB_acc1$acc,ESB_acc2$acc,
-        LOGLR_acc1$acc,LOGLR_acc2$acc)%>%
+        LOGLR_acc1$acc,LOGLR_acc2$acc,
+        KNN_acc1$acc,KNN_acc2$acc)%>%
   data.frame()%>%
   mutate(`split method`=c("block split","even split"))%>%
   mutate(classifier=c("Random Forest","Random Forest",
                       "Ensemble Model","Ensemble Model",
-                      "LOGLR","LOGLR"))%>%
+                      "LOGLR","LOGLR",
+                      "KNN","KNN"))%>%
   dplyr::select(classifier,`split method`,1)
 colnames(e)=c("classifier","split method",
               "test accuracy")
 png(file="plot/better-model-accuracy.png",units="in",width=4,
-    height=2,pointsize=12,res=300)
+    height=2.5,pointsize=12,res=300)
 e%>%
   grid.table(rows=NULL)
 dev.off()
+```
+4(d)
+```{r}
+model=LR_acc2$model
+summary(model)
+```
+```{r}
+train_data=LR_acc2$train
+train_x=train_data%>%select(NDAI,CORR,SD)
+trn_pca=train_x%>%PCA(graph = FALSE)
+
+proj=trn_pca$ind$coord[,1:2]%>%
+  data.frame()%>%
+  tibble()%>%
+  mutate(label = train_data$label,
+         pred = sign(LR_acc2$score-0.5))%>%
+  mutate(eval=case_when(pred==label&label==1~"TP",
+                        pred==label&label==-1~"TN",
+                        pred!=label&pred==1~"FP",
+                        TRUE~"FN"))
+
+p1=proj%>% 
+  ggplot(aes(x = Dim.1, y = Dim.2))+
+  geom_point(aes(color=eval),size=0.00001)+
+  labs(x="PC1",y="PC2",title="PCA Projections")+
+  guides(color=guide_legend(override.aes=list(size=2)))+
+  theme_bw()
+
+p2=plot(trn_pca,choix="var")
+p1+p2
+```
+```{r}
+train_x$prob=LR_acc2$score
+predictors=colnames(train_x)
+train_x%>%
+  mutate(logit=log(prob/(1-prob)))%>%
+  select(-prob)%>%
+  sample_n(10000)%>%
+  gather(key="predictors",value="predictor.value",-logit)%>%
+  ggplot(aes(logit,predictor.value))+
+  geom_point(size=0.01,alpha=0.5)+
+  geom_smooth(method="loess")+
+  theme_bw() + 
+  facet_wrap(~predictors,scales="free_y")
+```
+```{r}
+vif(model)
+```
+```{r}
+test_data=NB_acc2$test
+test_data$pred=sign(NB_acc2$prob-as.numeric(cutoff%>%filter(model=="NB")%>%select(Cutoff)))
+test_data_eval=test_data%>%mutate(eval=case_when(pred==label&label==1~"TP",
+                                                 pred==label&label==-1~"TN",
+                                                 pred!=label&pred==1~"FP",
+                                                 TRUE~"FN"))
+test_data_eval%>% 
+  dplyr::select(-c(pred,fold))%>%
+  rbind(images%>%filter(label==0)%>%mutate(eval="Unlabeled"))%>%
+  ggplot(aes(x,y,color =eval))+
+  geom_point(shape=15,size=0.00000000000001)+
+  facet_wrap(~image)+
+  coord_fixed()+
+  guides(color=guide_legend(override.aes=list(size=10)))+
+  labs(x="x coordinate",y="y coordinate")+
+  # scale_color_manual(values=c("#501d8a", "#1c8041", "#e55709"),
+  #                    labels=c("not cloud","unlabeled","cloud"))+
+  theme(legend.position="right",legend.title=element_blank())
+```
+```{r}
+p1=test_data_eval%>%
+  ggplot(aes(x=NDAI,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p2=test_data_eval%>%
+  ggplot(aes(x=NDAI,y=CORR))+
+  geom_point(aes(color=eval),size=0.1)
+
+p3=test_data_eval%>%
+  ggplot(aes(x=CORR,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p1+p2+p3+plot_layout(nrow=1)
 ```
 
 
