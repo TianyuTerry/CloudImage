@@ -148,23 +148,23 @@ knitr::include_graphics("plot/test-prf.png")
 
 From optimization perspective, the objective function of logistic regression loss is convex. According to Table \@ref(fig:lr_smr), parameters converged after 6 steps and achieves global minimum. From the effectiveness perspective, the model works effectively as there is a huge drop from null deviance to residual deviance, indicating tremendous gain from logsitic regression model compared to a plain constant model. From validity perspective, all the coefficients are statistically significant. The p-values are too small that they become numerically 0 (Table \@ref(fig:lr_coef). To test the linear assumption, scatter plots of predicted log-odds and covariates (Figure \@ref(fig:lr_linearity)) are plotted. Strict linearity should not be expected as the linearity is with respect to all covariates while each scatter plots only demonstrate the relationship between one log-odds and one variable. Therefore, a smooth estimation is made to demonstrate the trend. As can be seen, there is linear relationship with respect to NDAI and CORR, but not for SD. Training data does not align with linear assumption perfectly. Besides linearity assumption, collinearity is also crucial for linear models. We adopted variance inflation factors to test collinearity among covariates (Table \@ref(fig:lr_collinearity)). Since as a rule of thumb VIF value that exceeds 5 or 10 indicates a problematic amount of collinearity, there is not collinearity issue in training data. In the end, we try to visualize decision boundary in two-dimension space using PCA, but the projected data indicates that there does not exists such boundary in lower dimensional space (Figure \@ref(fig:lr_pca)). The evidence is that predicted positive and negative labels mix together. We cannot determine the predicted label of a given lower-space point. This makes sense if we notice that the decision boundary in 3-dimensional space is 2-dimensional, the projection of which should also be 2-dimensional.
 
-```{r lr_smr,fig.cap="Summary of logistic regression model",out.width="70%",echo=FALSE}
+```{r lr-smr,fig.cap="Summary of logistic regression model",out.width="70%",echo=FALSE}
 knitr::include_graphics("plot/lr_smr.png") 
 ```
 
-```{r lr_coef,fig.cap="Coefficients of logistic regression model",out.width="70%",echo=FALSE}
+```{r lr-coef,fig.cap="Coefficients of logistic regression model",out.width="70%",echo=FALSE}
 knitr::include_graphics("plot/lr_coef.png") 
 ```
 
-```{r lr_linearity,fig.cap="Linearity test for logistic regression model",out.width="70%",echo=FALSE}
+```{r lr-linearity,fig.cap="Linearity test for logistic regression model",out.width="70%",echo=FALSE}
 knitr::include_graphics("plot/lr_linearity.png") 
 ```
 
-```{r lr_collinearity,fig.cap="Collinearity test for logistic regression model",out.width="70%",echo=FALSE}
+```{r lr-collinearity,fig.cap="Collinearity test for logistic regression model",out.width="70%",echo=FALSE}
 knitr::include_graphics("plot/lr_collinearity.png") 
 ```
 
-```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
+```{r lr-pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
 knitr::include_graphics("plot/lr_pca.png") 
 ```
 
@@ -172,21 +172,9 @@ knitr::include_graphics("plot/lr_pca.png")
 
 
 
-```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
-knitr::include_graphics("plot/lr_pca.png") 
-```
 
-```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
-knitr::include_graphics("plot/lr_pca.png") 
-```
 
-```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
-knitr::include_graphics("plot/lr_pca.png") 
-```
 
-```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
-knitr::include_graphics("plot/lr_pca.png") 
-```
 
 
 
