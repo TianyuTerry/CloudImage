@@ -39,7 +39,7 @@ image3=read.table("data/imagem3.txt")
 colnames(image3)=c("y","x","label","NDAI","SD","CORR","DF","CF","BF","AF","AN")
 ```
 
-2(b) percent-table
+1(b) percent-table
 ```{r}
 png(file="plot/percent-table.png",units="in",width=4,
     height=1.2 ,pointsize=12,res=300)
@@ -203,6 +203,9 @@ group_image3=group_fun1(image3)
 group_image1p=group_fun1(image1,drop_margin=TRUE)
 group_image2p=group_fun1(image2,drop_margin=TRUE)
 group_image3p=group_fun1(image3,drop_margin=TRUE)
+group_image1pp=group_fun2(image1)
+group_image2pp=group_fun2(image2)
+group_image3pp=group_fun2(image3)
 
 group_images=rbind(group_image1,group_image2,group_image3)
 group_imagesp=rbind(group_image1p,group_image2p,group_image3p)

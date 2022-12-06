@@ -61,6 +61,30 @@ group_fun=function(img,size){
   return(group_image)
 }
 # combine images together and split into train/val/test
+group_fun2=function(image0,folds=6){
+  image1=image0%>%filter(label==1)
+  image2=image0%>%filter(label==-1)
+  n1=nrow(image1)
+  n2=nrow(image2)
+  group_list1=even_fold(n1,folds)
+  group_list2=even_fold(n2,folds)
+  image1=image1%>%mutate(fold=group_list1)
+  image2=image2%>%mutate(fold=group_list2)
+  return(rbind(image1,image2))
+  
+  
+}
+even_fold=function(num_row,k){
+  seq_k=1:k
+  nseq=ceiling(num_row/k)
+  group_list=c()
+  for(i in 1:nseq){
+    group_list=c(group_list,seq_k)
+  }
+  group_list=head(group_list,num_row)
+  group_list=group_list[sample(1:num_row,replace = FALSE)]
+  return(group_list)
+}
 
 
 CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=FALSE){
@@ -155,3 +179,13 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
   }
   return(res)
 }
+k=6
+nrow0=100
+seq_k=1:k
+nseq=ceiling(nrow0/k)
+group_list=c()
+for(i in 1:nseq){
+  group_list=c(group_list,seq_k)
+}
+group_list=head(group_list,nrow0)
+group_list[sample(1:nrow0)]
