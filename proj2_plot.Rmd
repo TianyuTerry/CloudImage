@@ -241,27 +241,6 @@ dev.off()
 2(a)
 ```{r}
 png(file="plot/split-result1.png",units="in",width=7.5,
-<<<<<<< HEAD
-=======
-    height=3,pointsize=12,res=300)
-rbind(group_image1%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
-      group_image2%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
-      group_image3%>%dplyr::select(c(1,2,12))%>%mutate(image="Image3"))%>%
-  ggplot(aes(x,y,color=factor(fold)))+
-  geom_point(shape=15,size=0.0000000000000001)+
-  facet_wrap(~image)+
-  coord_fixed()+
-  guides(color = guide_legend(override.aes = list(size = 10)))+
-  labs(x="x coordinate",y="y coordinate")+
-  #scale_color_manual(values=c("#501d8a", "#e55709"),
-   #                  labels=c("not cloud","cloud"))+
-  theme(legend.position="right",legend.title=element_blank())
-dev.off()
-```
-
-```{r}
-png(file="plot/split-result2.png",units="in",width=7.5,
->>>>>>> a66419a7ea1f0f0ecdc9372d53eeafc22bca72d2
     height=3,pointsize=12,res=300)
 rbind(group_image1p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
       group_image2p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
