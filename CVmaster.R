@@ -93,6 +93,15 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
       model=rpart(as.formula(train_model),data=train_data,method="class") 
       valid_pred=sign(predict(model,valid_data,type='prob')[,2]-0.5)
     }
+    else if(generic_fun=="KNN"){
+      train_knn=train_data%>%dplyr::select(NDAI:CORR)
+      valid_knn=valid_data%>%dplyr::select(NDAI:CORR)
+      valid_pred=knn(train_knn,valid_knn,k=5,cl=train_data$label)
+      if(loss_fun=="accuracy"){
+        y_test=valid_knn%>%dplyr::select(label)
+        valid_acc=c(valid_acc,mean(y_test$label==valid_pred))
+      }
+    }
     if("accuracy"%in%loss_fun){
       valid_acc=c(valid_acc,mean(valid_pred==y_valid))
     }
@@ -132,12 +141,34 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     test_pred=sign(prob_pred-0.5)
     prob_train=predict(clf,train_data,type='prob')[,2]
   }
-  res=list(prob=prob_pred,
-           gold=y_test,
-           test=test_data,
-           train=train_data,
-           score=prob_train,
-           model=clf)
+  else if(generic_fun=="KNN"){
+    train_knn=train_data%>%dplyr::select(NDAI:CORR)
+    test_data=test_data%>%dplyr::select(NDAI:CORR)
+    test_pred=knn(train_knn,test_data,k=5,cl=train_data$label)
+  }
+  else if(generic_fun=="KNN+QDA+NB"){
+    train_knn=train_data%>%dplyr::select(NDAI:CORR)
+    test_data=test_data%>%dplyr::select(NDAI:CORR)
+    test_pred=knn(train_knn,test_data,k=5,cl=train_data$label)
+    clf=qda(formula=as.formula(train_model),data=train_data)
+    test_pred=cbind(test_pred,as.numeric(as.character(predict(clf,test_data)$class)))
+    clf=naive_bayes(as.formula(train_model),data=train_data,usekernel=T) 
+    test_pred=cbind(test_pred,sign(predict(clf,test_data,type='prob')[,2]-0.5))
+    test_pred=apply(test_pred,1,mfv)
+  }
+  if (generic_fun%in%c("logistics","LDA","QDA","NB","CART")){
+    res=list(prob=prob_pred,
+             gold=y_test,
+             test=test_data,
+             train=train_data,
+             score=prob_train,
+             model=clf)
+  }
+  if (generic_fun=="KNN"){
+    res=list(gold=y_test,
+             test=test_data,
+             train=train_data)
+  }
   if("accuracy"%in%loss_fun){
     test_acc=mean(test_pred==y_test)
     res$acc=c(valid_acc,mean(valid_acc),test_acc)
