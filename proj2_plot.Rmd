@@ -596,15 +596,18 @@ png(file="plot/misclf_feature.png",units="in",width=8,
 
 p1=test_data_eval%>%
   ggplot(aes(x=NDAI,y=SD))+
-  geom_point(aes(color=eval),size=0.1)
+  geom_point(aes(color=eval),size=0.1)+
+  guides(color=guide_legend(override.aes=list(size=3)))
 
 p2=test_data_eval%>%
   ggplot(aes(x=NDAI,y=CORR))+
-  geom_point(aes(color=eval),size=0.1)
+  geom_point(aes(color=eval),size=0.1)+
+  guides(color=guide_legend(override.aes=list(size=3)))
 
 p3=test_data_eval%>%
   ggplot(aes(x=CORR,y=SD))+
-  geom_point(aes(color=eval),size=0.1)
+  geom_point(aes(color=eval),size=0.1)+
+  guides(color=guide_legend(override.aes=list(size=3)))
 
 p1+p2+p3+plot_layout(nrow=1)
 dev.off()
@@ -656,15 +659,18 @@ png(file="plot/misclf_feature_qda.png",units="in",width=8,
 
 p1=test_data_eval_qda%>%
   ggplot(aes(x=NDAI,y=SD))+
-  geom_point(aes(color=eval),size=0.1)
+  geom_point(aes(color=eval),size=0.1)+
+  guides(color=guide_legend(override.aes=list(size=3)))
 
 p2=test_data_eval_qda%>%
   ggplot(aes(x=NDAI,y=CORR))+
-  geom_point(aes(color=eval),size=0.1)
+  geom_point(aes(color=eval),size=0.1)+
+  guides(color=guide_legend(override.aes=list(size=3)))
 
 p3=test_data_eval_qda%>%
   ggplot(aes(x=CORR,y=SD))+
-  geom_point(aes(color=eval),size=0.1)
+  geom_point(aes(color=eval),size=0.1)+
+  guides(color=guide_legend(override.aes=list(size=3)))
 
 p1+p2+p3+plot_layout(nrow=1)
 dev.off()
