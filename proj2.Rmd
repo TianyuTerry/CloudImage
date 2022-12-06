@@ -1,5 +1,5 @@
 ---
-title: "Project2: Cloud Image "
+title: "STA521 Project2: Cloud Image "
 author: "Tianyu Wu(...),  Shiqi Liu(2752089)"
 output:
   bookdown::pdf_book: 
@@ -22,6 +22,14 @@ require(MASS)
 require(e1071)
 require(adabag)
 require(class)
+require(caTools)
+require(ROCR)
+require(caret)
+require(rpart)
+require(car)
+require(FactoMineR)
+require(modeest)
+require(randomForest)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -108,22 +116,77 @@ CVmaster function is in CVmaster.R.
 
 ### (a)
 
-
+Selected classification models are Logistic Regression(LR), Linear Discriminant Analysis(LDA), Quadratic Discriminant Analysis(QDA), Naive Bayes(NB) and Classification and Regression Tree(CART). Logistic Regression is the classification model with mainly two assumptions. The first is that the response variable (class) follows a Bernoulli distribution. The second is that the log-odds of this Bernoulli variable is linear with respect to covariates. This linear assumption, as indicated by part4(a) in the next section, is reasonable but might not be accurate. Assumptions for LDA and QDA are the same: there is a data generating process behind the scenes. First, generate a class. Second, generate instance for the chosen class. Within each class, instances are normal distributed with different means. The difference of LDA and QDA lies in the fact that the covariance for different classes are the same for LDA while the covariance are different across classes for QDA. There is also a data generation process behind NB. The assumption here is that coviarates are generated independently within each class. As can be seen from Figure \@ref(fig:density), distributions of covariates are not normal within each class, nor are they independent in general. Some of the distributions are bimodal, which are far from Gaussian distribution while the distributions of NDAI and SD are quite close to Gaussian. The dependence of covariates can also be seen from GGPair plot as in Figure \@ref(fig:pairwise-correlations). It is interesting to observe that within each class the correlation between covaraites are actually smaller. The independence assumption of Naive Bayes is not perfectly accurate, but reasonable. For accuracy results, we can see that cross-validation mean accuracy is very close to test accuracy in general. This indicates that CV is a robust way of evaluating model performance. The top model is Naive Bayes according to test accuracy.
 
 ```{r cv-acc,fig.cap="The accuracies across folds, the average accuracies across folds, and the test accurary for each classification model with two different splitting methods." ,out.width="100%",echo=FALSE}
 knitr::include_graphics("plot/cv-acc.png") 
 ```
 
-```{r density,fig.cap="",out.width="70%",echo=FALSE}
+```{r density,fig.cap="Distribution of covariates",out.width="70%",echo=FALSE}
 knitr::include_graphics("plot/density.png") 
-
 ```
 
+### (b)
+
+Cutoff values are selected based on maximum Youden's J Statistic (Youden's Index), which is defined as True Positive Rate(TPR) - False Positive Rate(FPR). Geometrically it indicates the vertical distance right above the 45 degree line which represents ROC curve for a basic random model. As can be seen from the Figure \@ref(fig:roc), the selected cut-off points locate almost at the top-left corner of each ROC curve. This is preferred as we want to maintain relatively high TPR and low FPR at the same time.
+
+```{r roc,fig.cap="ROC curve with cut-off values",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/roc.png") 
+```
+
+### (c)
+
+Other selected relevant metrics are precision, recall, f1 score and area under curve(AUC). Precision measures the ratio of correct prediction out of all positive predictions. In other words, precision measures quality of positive prediction. Recall measures the ratio of successfully predicted positive instances out of all positive instances. In other words, recall measures the ability to identify positive instances. F1 score is the harmonic mean of precision and recall, which can be seen as a comprehensive measurement regarding positive predictions combining both precision and recall. AUC measures area under ROC curve, which can be seen as a comprehensive measurement regarding the accuracy of positive predictions. Best model is again Naive Bayes, according to f1 score and AUC (Table \@ref(fig:prf)).
+
+```{r prf,fig.cap="Distribution of covariates",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/test-prf.png") 
+```
+
+## 4 Diagnostics
+
+### (a)
+
+From optimization perspective, the objective function of logistic regression loss is convex. According to Table \@ref(fig:lr_smr), parameters converged after 6 steps and achieves global minimum. From the effectiveness perspective, the model works effectively as there is a huge drop from null deviance to residual deviance, indicating tremendous gain from logsitic regression model compared to a plain constant model. From validity perspective, all the coefficients are statistically significant. The p-values are too small that they become numerically 0 (Table \@ref(fig:lr_coef). To test the linear assumption, scatter plots of predicted log-odds and covariates (Figure \@ref(fig:lr_linearity)) are plotted. Strict linearity should not be expected as the linearity is with respect to all covariates while each scatter plots only demonstrate the relationship between one log-odds and one variable. Therefore, a smooth estimation is made to demonstrate the trend. As can be seen, there is linear relationship with respect to NDAI and CORR, but not for SD. Training data does not align with linear assumption perfectly. Besides linearity assumption, collinearity is also crucial for linear models. We adopted variance inflation factors to test collinearity among covariates (Table \@ref(fig:lr_collinearity)). Since as a rule of thumb VIF value that exceeds 5 or 10 indicates a problematic amount of collinearity, there is not collinearity issue in training data. In the end, we try to visualize decision boundary in two-dimension space using PCA, but the projected data indicates that there does not exists such boundary in lower dimensional space (Figure \@ref(fig:lr_pca)). The evidence is that predicted positive and negative labels mix together. We cannot determine the predicted label of a given lower-space point. This makes sense if we notice that the decision boundary in 3-dimensional space is 2-dimensional, the projection of which should also be 2-dimensional.
+
+```{r lr_smr,fig.cap="Summary of logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_smr.png") 
+```
+
+```{r lr_coef,fig.cap="Coefficients of logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_coef.png") 
+```
+
+```{r lr_linearity,fig.cap="Linearity test for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_linearity.png") 
+```
+
+```{r lr_collinearity,fig.cap="Collinearity test for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_collinearity.png") 
+```
+
+```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_pca.png") 
+```
+
+### (b)
 
 
 
+```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_pca.png") 
+```
 
+```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_pca.png") 
+```
 
+```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_pca.png") 
+```
+
+```{r lr_pca,fig.cap="PCA for logistic regression model",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/lr_pca.png") 
+```
 
 
 
