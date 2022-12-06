@@ -92,9 +92,9 @@ ggally_mysmooth <- function(data, mapping, ...){
     geom_density(  fill=NA)
 }
 df1=rbind(image1,image2,image3)%>%
-  dplyr::select(3:11)%>%
-  filter(label!=0)
+  dplyr::select(3:11)
 df1%>%
+  filter(label!=0)%>%
   #dplyr::select(2:9)%>%
   ggpairs(mapping = ggplot2::aes(color=factor(label)),
           columns=2:9,
@@ -212,12 +212,13 @@ group_image3pp=group_fun2(image3)
 
 group_images=rbind(group_image1,group_image2,group_image3)
 group_imagesp=rbind(group_image1p,group_image2p,group_image3p)
+group_imagespp=rbind(group_image1pp,group_image2pp,group_image3pp)
 ```
 2(a)
 ```{r}
-png(file="plot/split-result.png",units="in",width=3,
+png(file="plot/split-persentage.png",units="in",width=3,
     height=2,pointsize=12,res=300)
-group_images%>%
+group_imagespp%>%
   dplyr::select(c(3,12))%>%
   group_by(label,fold)%>%
   count()%>%
@@ -235,19 +236,19 @@ dev.off()
 ```
 2(a)
 ```{r}
-png(file="plot/margin-remove.png",units="in",width=7.5,
+png(file="plot/split-result2.png",units="in",width=7.5,
     height=3,pointsize=12,res=300)
-rbind(group_image1p%>%dplyr::select(1:3)%>%mutate(image="Image1"),
-      group_image2p%>%dplyr::select(1:3)%>%mutate(image="Image2"),
-      group_image3p%>%dplyr::select(1:3)%>%mutate(image="Image3"))%>%
-  ggplot(aes(x,y,color=factor(label)))+
+rbind(group_image1pp%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
+      group_image2pp%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
+      group_image3pp%>%dplyr::select(c(1,2,12))%>%mutate(image="Image3"))%>%
+  ggplot(aes(x,y,color=factor(fold)))+
   geom_point(shape=15,size=0.0000000000000001)+
   facet_wrap(~image)+
   coord_fixed()+
   guides(color = guide_legend(override.aes = list(size = 10)))+
   labs(x="x coordinate",y="y coordinate")+
-  scale_color_manual(values=c("#501d8a", "#e55709"),
-                     labels=c("not cloud","cloud"))+
+  #scale_color_manual(values=c("#501d8a", "#e55709"),
+   #                  labels=c("not cloud","cloud"))+
   theme(legend.position="right",legend.title=element_blank())
 dev.off()
 ```
@@ -284,9 +285,9 @@ acc1_valid=valid_data%>%
   mutate(data="valid",`split method`="block split")%>%
   dplyr::select(c(4,5,1:3))
 
-test2_data=group_imagesp%>%filter(fold==6)
-valid2_data=group_imagesp%>%filter(fold==5)
-train2_data=group_imagesp%>%filter(fold!=6&fold!=5)
+test2_data=group_imagespp%>%filter(fold==6)
+valid2_data=group_imagespp%>%filter(fold==5)
+train2_data=group_imagespp%>%filter(fold!=6&fold!=5)
 
 acc2_test=test2_data%>%
   dplyr::select(c(3,12))%>%
@@ -299,7 +300,7 @@ acc2_test=test2_data%>%
          cloud=percent(`1`/sum1,accuracy=0.01),
          Total="100%")%>%
   dplyr::select(c(5:7))%>%
-  mutate(data="test",`split method`="remove margin")%>%
+  mutate(data="test",`split method`="even split")%>%
   dplyr::select(c(4,5,1:3))
 acc2_valid=valid2_data%>%
   dplyr::select(c(3,12))%>%
@@ -312,7 +313,7 @@ acc2_valid=valid2_data%>%
          cloud=percent(`1`/sum1,accuracy=0.01),
          Total="100%")%>%
   dplyr::select(c(5:7))%>%
-  mutate(data="valid",`split method`="remove margin")%>%
+  mutate(data="valid",`split method`="even split")%>%
   dplyr::select(c(4,5,1:3))
 
 png(file="plot/trivial-classifier.png",units = "in",width=4.2,
