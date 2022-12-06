@@ -236,11 +236,11 @@ dev.off()
 ```
 2(a)
 ```{r}
-png(file="plot/split-result2.png",units="in",width=7.5,
+png(file="plot/split-result1.png",units="in",width=7.5,
     height=3,pointsize=12,res=300)
-rbind(group_image1pp%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
-      group_image2pp%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
-      group_image3pp%>%dplyr::select(c(1,2,12))%>%mutate(image="Image3"))%>%
+rbind(group_image1p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image1"),
+      group_image2p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image2"),
+      group_image3p%>%dplyr::select(c(1,2,12))%>%mutate(image="Image3"))%>%
   ggplot(aes(x,y,color=factor(fold)))+
   geom_point(shape=15,size=0.0000000000000001)+
   facet_wrap(~image)+

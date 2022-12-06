@@ -233,13 +233,3 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
   }
   return(res)
 }
-k=6
-nrow0=100
-seq_k=1:k
-nseq=ceiling(nrow0/k)
-group_list=c()
-for(i in 1:nseq){
-  group_list=c(group_list,seq_k)
-}
-group_list=head(group_list,nrow0)
-group_list[sample(1:nrow0)]
