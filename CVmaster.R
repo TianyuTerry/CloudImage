@@ -87,10 +87,15 @@ even_fold=function(num_row,k){
 }
 
 
-CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=FALSE){
+CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0=FALSE,group_choice=1){
   train_model="factor(label)~NDAI+CORR+SD"
   CV_data=cbind(X,y)
-  group_data=group_fun1(CV_data,drop_margin = drop_margin0)
+  if(group_choice==1){
+    group_data=group_fun1(CV_data,drop_margin = drop_margin0)
+  }
+  else if(group_choice==2){
+    group_data=group_fun2(CV_data,fold=6)
+  }
   valid_acc=c()
   for(i in 1:(K-1)){
     train_data=group_data%>%filter(fold!=i&fold!=K)
