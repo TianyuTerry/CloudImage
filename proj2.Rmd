@@ -53,13 +53,17 @@ knitr::include_graphics("plot/labeled-images.png")
 
 ### (c)
 
-Befoer
+To perform a visual and quantitative EDA on the data set, we first combine the three images data set and remove all unlabeled data points. Then, we generate a plot with pairwise relationships between all eight features (in Figure \@ref(fig:pairwise-correlations)) and a group of box plots to show the relationship between each feature and the expert labels (in Figure \@ref(fig:label-feature1)). 
 
-See Figure \@ref(fig:pairwise-correlations). 
+In upper part of the Figure \@ref(fig:pairwise-correlations), three correlations are presented for each pair of eight features. The first of the three correlation is computed with the whole data set. The second one is computed with data points labelled as not cloud and the third one is computed with data points labelled as cloud. 
+
+In Figure \@ref(fig:label-feature1) and the 
+
+
 ```{r pairwise-correlations,fig.cap="Pairwise relationships between the three features", echo=FALSE,out.width="100%"}
 knitr::include_graphics("plot/pairwise-correlations.png") 
 ```
-See Figure \@ref(fig:label-feature1).
+
 ```{r label-feature1,fig.cap="Boxplots of label verse each feature, with unlabelled data removed. Correlations of label and each feature with and without unlabeled data. ", echo=FALSE}
 knitr::include_graphics("plot/label-feature1.png") 
 ```
@@ -110,7 +114,8 @@ The CVmaster function is in CVmaster.R.
 knitr::include_graphics("plot/cv-acc.png") 
 ```
 
-```{r}
+```{r density,fig.cap="",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/density.png") 
 
 ```
 

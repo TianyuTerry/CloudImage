@@ -369,6 +369,42 @@ a%>%
   grid.table(rows=NULL)
 dev.off()
 ```
+3(a)  lda qda assumption
+```{r}
+png(file="plot/density.png",units="in",width=5.3,
+    height=3,pointsize=12,res=300)
+p1=df1%>%
+  filter(label==1)%>%
+  ggplot(aes(NDAI,SD))+
+  geom_density_2d()+labs(subtitle="cloud")
+p2=df1%>%
+  filter(label==1)%>%
+  ggplot(aes(NDAI,CORR))+
+  geom_density_2d()+labs(subtitle="cloud")
+p3=df1%>%
+  filter(label==1)%>%
+  ggplot(aes(CORR,SD))+
+  geom_density_2d()+labs(subtitle="cloud")
+p4=df1%>%
+  filter(label==-1)%>%
+  ggplot(aes(NDAI,SD))+
+  geom_density_2d()+labs(subtitle="not cloud")
+p5=df1%>%
+  filter(label==-1)%>%
+  ggplot(aes(NDAI,CORR))+
+  geom_density_2d()+labs(subtitle="not cloud")
+p6=df1%>%
+  filter(label==-1)%>%
+  ggplot(aes(CORR,SD))+
+  geom_density_2d()+labs(subtitle="not cloud")
+
+pp7=p1+p2+p3+p4+p5+p6+plot_layout(nrow=2,byrow=T)
+png(file="plot/density.png",units="in",width=5.3,
+    height=3,pointsize=12,res=300)
+pp7
+dev.off()
+```
+
 3(b)
 ```{r}
 perf.all=data.frame()
