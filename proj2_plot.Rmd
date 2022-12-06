@@ -26,6 +26,7 @@ require(caret)
 require(rpart)
 require(car)
 require(FactoMineR)
+require(modeest)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -335,6 +336,9 @@ images=rbind(image1%>%mutate(image=1),image2%>%mutate(image=2),image3%>%mutate(i
 X=images%>%dplyr::select(-label)
 y=images%>%dplyr::select(label)
 K=6
+```
+
+```{r}
 LR_acc1=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=TRUE)
 QDA_acc1=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
@@ -440,7 +444,8 @@ cutoff=perf.all%>%
   mutate(youden=`True positive rate`-`False positive rate`)%>%
   group_by(model)%>%
   filter(youden==max(youden))%>%
-  select(model,Cutoff)
+  select(model,Cutoff)%>%
+  ungroup()
 png(file="plot/roc.png",units="in",width=5,
     height=4 ,pointsize=12,res=300)
 perf.all%>%
@@ -533,6 +538,7 @@ p1+p2
 
 dev.off()
 ```
+
 ```{r}
 # dim1 <- seq(from = -8, to = 12, length = 100)
 # dim2 <- seq(from = -8, to = 5, length = 100)
@@ -616,7 +622,7 @@ dev.off()
 png(file="plot/misclf_spatial.png",units="in",width=7,
     height=3,pointsize=12,res=300)
 test_data=NB_acc1$test
-test_data$pred=sign(NB_acc1$prob-0.5)
+test_data$pred=sign(NB_acc1$prob-as.numeric(cutoff%>%filter(model=="NB")%>%select(Cutoff)))
 test_data_eval=test_data%>%mutate(eval=case_when(pred==label&label==1~"TP",
                                                  pred==label&label==-1~"TN",
                                                  pred!=label&pred==1~"FP",
@@ -664,7 +670,7 @@ dev.off()
 png(file="plot/misclf_spatial_qda.png",units="in",width=7,
     height=3,pointsize=12,res=300)
 test_data_qda=QDA_acc1$test
-test_data_qda$pred=sign(QDA_acc1$prob-0.5)
+test_data_qda$pred=sign(QDA_acc1$prob-as.numeric(cutoff%>%filter(model=="QDA")%>%select(Cutoff)))
 test_data_eval_qda=test_data_qda%>%mutate(eval=case_when(pred==label&label==1~"TP",
                                                  pred==label&label==-1~"TN",
                                                  pred!=label&pred==1~"FP",
@@ -708,7 +714,7 @@ dev.off()
 png(file="plot/misclf_feature_lda.png",units="in",width=8,
     height=3,pointsize=12,res=300)
 test_data_lda=LDA_acc1$test
-test_data_lda$pred=sign(LDA_acc1$prob-0.5)
+test_data_lda$pred=sign(LDA_acc1$prob-as.numeric(cutoff%>%filter(model=="LDA")%>%select(Cutoff)))
 test_data_eval_lda=test_data_lda%>%mutate(eval=case_when(pred==label&label==1~"TP",
                                                  pred==label&label==-1~"TN",
                                                  pred!=label&pred==1~"FP",
@@ -722,6 +728,54 @@ p2=test_data_eval_lda%>%
   geom_point(aes(color=eval),size=0.1)
 
 p3=test_data_eval_lda%>%
+  ggplot(aes(x=CORR,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p1+p2+p3+plot_layout(nrow=1)
+dev.off()
+```
+```{r}
+png(file="plot/misclf_feature_cart.png",units="in",width=8,
+    height=3,pointsize=12,res=300)
+test_data_cart=CART_acc1$test
+test_data_cart$pred=sign(CART_acc1$prob-as.numeric(cutoff%>%filter(model=="CART")%>%select(Cutoff)))
+test_data_eval_cart=test_data_lda%>%mutate(eval=case_when(pred==label&label==1~"TP",
+                                                 pred==label&label==-1~"TN",
+                                                 pred!=label&pred==1~"FP",
+                                                 TRUE~"FN"))
+p1=test_data_eval_cart%>%
+  ggplot(aes(x=NDAI,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p2=test_data_eval_cart%>%
+  ggplot(aes(x=NDAI,y=CORR))+
+  geom_point(aes(color=eval),size=0.1)
+
+p3=test_data_eval_cart%>%
+  ggplot(aes(x=CORR,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p1+p2+p3+plot_layout(nrow=1)
+dev.off()
+```
+```{r}
+png(file="plot/misclf_feature_lr.png",units="in",width=8,
+    height=3,pointsize=12,res=300)
+test_data_lr=LR_acc1$test
+test_data_lr$pred=sign(LR_acc1$prob-as.numeric(cutoff%>%filter(model=="LR")%>%select(Cutoff)))
+test_data_eval_lr=test_data_lda%>%mutate(eval=case_when(pred==label&label==1~"TP",
+                                                 pred==label&label==-1~"TN",
+                                                 pred!=label&pred==1~"FP",
+                                                 TRUE~"FN"))
+p1=test_data_eval_lr%>%
+  ggplot(aes(x=NDAI,y=SD))+
+  geom_point(aes(color=eval),size=0.1)
+
+p2=test_data_eval_lr%>%
+  ggplot(aes(x=NDAI,y=CORR))+
+  geom_point(aes(color=eval),size=0.1)
+
+p3=test_data_eval_lr%>%
   ggplot(aes(x=CORR,y=SD))+
   geom_point(aes(color=eval),size=0.1)
 
