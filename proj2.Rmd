@@ -98,7 +98,7 @@ knitr::include_graphics("plot/best-features.png")
 
 ### (d)
 
-The CVmaster function is in CVmaster.R.
+CVmaster function is in CVmaster.R.
 
 ## 3 Modeling
 
