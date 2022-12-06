@@ -71,7 +71,7 @@ knitr::include_graphics("plot/pairwise-correlations.png")
 
 From the first plot in Figure \@ref(fig:label-feature1) and the first diagonal plot in Figure\@ref(fig:pairwise-correlations), we find that the distribution of NDAI for the two groups are quite different with each others, so NDAI is supposed to be a good feature to separate data set. For CORR and SD, the differences are relatively smaller. For the five radiation values, DF, CF,BF,AF, and AN, their distributions are similar with each others for both classes. Also, with unlabeled data points removed, the correlations between Label and each of the eight features increase by varying degrees.
 
-```{r label-feature1,fig.cap="Boxplots of label verse each feature, with unlabelled data removed. Correlations of label and each feature with and without unlabeled data. ", echo=FALSE}
+```{r label-feature1,fig.cap="Boxplots of label verse each feature, with unlabelled data removed. Correlations of label and each feature with and without unlabeled data. ", echo=FALSE,out.width="100%"}
 knitr::include_graphics("plot/label-feature1.png") 
 ```
 
@@ -172,12 +172,37 @@ knitr::include_graphics("plot/lr_pca.png")
 
 ### (b)
 
+The best model is Naive Bayes. Hence,this part will be discussed based on result of Naive Bayes. There are two types of misclassification errors: false positive(FP) and false negative(FN). To visualize the pattern of misclassified data points, we plot misclassified data points against all 3 selected features and xy coordinates for all 3 images. In spatial visualization (Figure \@ref(fig:misclf-spatial)), there are several significant trends of misclassified data points. Initial guess was those misclassified might be close to unlabeled boundary. But it turns out that false negative and true positive are mixed quite well far away from boundary in image3. There is also a tendency for false positive in a small area enclosed by boundary, as in image2 and image3. Furthermore, misclassified points are located close to each other. This makes sense as weather condition and readings are similar in nearby regions. In feature visualization (Figure \@ref(fig:misclf-feature)), it is noticed that false positive and true positive are cluttered together in the same feature range. We can check this in more details based on Figure \@ref(fig:misclf-density)). False positive and true positive share almost identical feature range for NDAI and SD. False negative and true negative share almost identical feature range for CORR and SD. This is exactly the reason models make wrong predictions. After all, similar features are supposed to match to the same classes. Moreover, in these projected 2-dimensional feature space, the decision boundary is quite clear.
 
+```{r misclf-feature,fig.cap="misclassified data points against 3 features",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/misclf_feature.png") 
+```
 
+```{r misclf-spatial,fig.cap="misclassified data points against xy coordiantes",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/misclf_spatial.png") 
+```
 
+```{r misclf-density,fig.cap="feature range of misclassified data points",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/misclf_density.png") 
+```
 
+### (c)
 
+The analysis in part4(b) indicates that most of the misclassfication errors are due to the fact that similar features correspond to different labels. Therefore, it is very difficult in general to make further improvement. However, one idea is to use KNN to make use of the fact that data points with similar labels are located next to each other. Advantage of KNN is that it has a much more complicated decision boundary. Simple decision boundary cannot resolve those tricky cases as indicated by analysis in part4(b). The second idea is to use ensemble models to incorporate result from different base models. From Figure \@ref(fig:misclf-feature-QDA)) we can see that there are some minor prediction difference between NB and QDA, such as the bottom-left corner of second plot. This is due to different data generation assumption made by two generative models. Also, taking into account distribution of labels might be helpful in a sense that it is very difficult to distinguish labels solely based on covariates (discriminatie model). The hope is that by combining KNN together with 2 best generative models (QDA and NB), the overall result will improve. The final decision is made by majority vote. The third idea is to use random forest to create some randomness in the process of making use of features. Besides that, decision boundary of random forest might be much more complicated as well. The final idea is to do some feature engineering. A log transformation is applied to SD since it does not satisfy linear assumption. However, feature engineering does not make any difference in this scenario as similar features are transformed similar new features as well and no more power of differentiation is introduced. Unfortunately, all 4 ideas fail to deliver a better classification model, as shown in Table \@ref(fig:better-model-accuracy).
 
+```{r misclf-feature-QDA,fig.cap="misclassified data points against 3 features, QDA",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/misclf_feature_qda.png") 
+```
+
+```{r better-model-accuracy,fig.cap="Test accuracy of 4 new models",out.width="70%",echo=FALSE}
+knitr::include_graphics("plot/better-model-accuracy.png") 
+```
+
+### (d)
+
+Results are similar. This is expected as the class distribution within training dataset and test dataset turns out to be close to each other. Similar plots are not listed in the report to save space.
+
+### (e)
 
 
 
