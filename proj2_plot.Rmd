@@ -27,6 +27,7 @@ require(rpart)
 require(car)
 require(FactoMineR)
 require(modeest)
+require(ggrepel)
 require(randomForest)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
@@ -734,17 +735,24 @@ ESB_acc2=CVmaster(generic_fun="KNN+QDA+NB",X,y,K,loss_fun=c("accuracy"),group_ch
 ```
 
 ```{r}
+LOGLR_acc1=CVmaster(generic_fun="LOGLR",X,y,K,loss_fun=c("accuracy"),drop_margin0=FALSE)
+LOGLR_acc2=CVmaster(generic_fun="LOGLR",X,y,K,loss_fun=c("accuracy"),group_choice=2)
+```
+
+```{r}
 e=rbind(RF_acc1$acc,RF_acc2$acc,
-        ESB_acc1$acc,ESB_acc2$acc)%>%
+        ESB_acc1$acc,ESB_acc2$acc,
+        LOGLR_acc1$acc,LOGLR_acc2$acc)%>%
   data.frame()%>%
   mutate(`split method`=c("block split","even split"))%>%
   mutate(classifier=c("Random Forest","Random Forest",
-                      "Ensemble Model","Ensemble Model"))%>%
+                      "Ensemble Model","Ensemble Model",
+                      "LOGLR","LOGLR"))%>%
   dplyr::select(classifier,`split method`,1)
 colnames(e)=c("classifier","split method",
               "test accuracy")
-png(file="plot/better-model-accuracy.png",units="in",width=7,
-    height=3.2,pointsize=12,res=300)
+png(file="plot/better-model-accuracy.png",units="in",width=4,
+    height=2,pointsize=12,res=300)
 e%>%
   grid.table(rows=NULL)
 dev.off()

@@ -190,8 +190,12 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     clf=train(as.formula(train_model),data=train_data,
               method="rf",metric="Accuracy",trControl=trControl,
               ntree=50,tuneGrid=expand.grid(mtry=c(1,2,3)))
-    # clf=randomForest(as.formula(train_model),data=train_data,ntree=50, mtry=2) 
     test_pred=predict(clf,test_data)
+  }
+  else if(generic_fun=="LOGLR"){
+    clf=glm(factor(label)~NDAI+CORR+log(SD),train_data,family="binomial")
+    prob_pred=predict(clf,test_data,type="response")
+    test_pred=sign(prob_pred-0.5)
   }
   if(generic_fun%in%c("logistics","LDA","QDA","NB","CART")){
     res=list(prob=prob_pred,
@@ -201,13 +205,7 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
              score=prob_train,
              model=clf)
   }
-  else if(generic_fun%in%c("KNN","KNN+QDA+NB")){
-    res=list(gold=y_test,
-             pred=test_pred,
-             test=test_data,
-             train=train_data)
-  }
-  else if(generic_fun=="RF"){
+  else if(generic_fun%in%c("KNN","KNN+QDA+NB","LOGLR","RF")){
     res=list(gold=y_test,
              pred=test_pred,
              test=test_data,
