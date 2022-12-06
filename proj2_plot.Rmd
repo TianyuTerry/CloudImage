@@ -343,19 +343,21 @@ K=6
 ```
 
 ```{r}
-LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
-QDA_acc2=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
-LDA_acc2=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
-NB_acc2=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
-CART_acc2=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
-```
-
-```{r}
+set.seed(123456)
 LR_acc1=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 LDA_acc1=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 QDA_acc1=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 NB_acc1=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 CART_acc1=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
+```
+
+```{r}
+set.seed(123456)
+LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+QDA_acc2=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+LDA_acc2=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+NB_acc2=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+CART_acc2=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
 ```
 
 3(a)
