@@ -27,6 +27,7 @@ require(rpart)
 require(car)
 require(FactoMineR)
 require(modeest)
+require(randomForest)
 ggplot2::theme_set(ggplot2::theme_bw())
 knitr::opts_chunk$set(fig.align = 'center')
 ```
@@ -342,24 +343,19 @@ K=6
 ```
 
 ```{r}
-LR_acc1=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
-LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=TRUE)
-QDA_acc1=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
-QDA_acc2=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=TRUE)
-LDA_acc1=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
-LDA_acc2=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=TRUE)
-NB_acc1=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
-NB_acc2=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=TRUE)
-CART_acc1=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
-CART_acc2=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=TRUE)
+LR_acc2=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+QDA_acc2=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+LDA_acc2=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+NB_acc2=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
+CART_acc2=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),group_choice=2)
 ```
 
 ```{r}
 LR_acc1=CVmaster(generic_fun="logistics",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
-CART_acc1=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 LDA_acc1=CVmaster(generic_fun="LDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 QDA_acc1=CVmaster(generic_fun="QDA",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 NB_acc1=CVmaster(generic_fun="NB",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
+CART_acc1=CVmaster(generic_fun="CART",X,y,K,loss_fun=c("accuracy","prf","auc"),drop_margin0=FALSE)
 ```
 
 3(a)
@@ -370,7 +366,7 @@ a=rbind(LR_acc1$acc,LR_acc2$acc,
         NB_acc1$acc,NB_acc2$acc,
         CART_acc1$acc,CART_acc2$acc)%>%
   data.frame()%>%
-  mutate(`split method`=c("block split","remove margin"))%>%
+  mutate(`split method`=c("block split","even split"))%>%
   mutate(classifier=c("Logistic Regression","Logistic Regression",
                       "QDA","QDA",
                       "LDA","LDA",
@@ -438,11 +434,6 @@ for (i in seq_along(split1.list)){
                          slot(perf,"alpha.name"),"model")
   perf.all=rbind(perf.all,model.perf)
 }
-# cutoff=perf.all%>%
-         # mutate(diff=abs(Cutoff-0.5))%>%
-#          group_by(model)%>%
-#          filter(diff==min(diff))%>%
-#          dplyr::select(model,Cutoff)
 cutoff=perf.all%>%
   mutate(youden=`True positive rate`-`False positive rate`)%>%
   group_by(model)%>%
@@ -471,7 +462,7 @@ b=rbind(c(LR_acc1$prf,LR_acc1$auc),
         c(CART_acc1$prf,CART_acc1$auc),
         c(CART_acc2$prf,CART_acc2$auc))%>%
   data.frame()%>%
-  mutate(`split method`=c("block split","remove margin"))%>%
+  mutate(`split method`=c("block split","even split"))%>%
   mutate(classifier=c("Logistic Regression","Logistic Regression",
                       "QDA","QDA",
                       "LDA","LDA",
@@ -540,60 +531,6 @@ p2=plot(trn_pca,choix="var")
 p1+p2
 
 dev.off()
-```
-
-```{r}
-# dim1 <- seq(from = -8, to = 12, length = 100)
-# dim2 <- seq(from = -8, to = 5, length = 100)
-# low_dim <- as.matrix(expand.grid(dim1, dim2))
-# 
-# means <- colMeans(train_x)
-# means_mat <- matrix(means, nrow = 10000, ncol = 3, byrow = TRUE)
-# sds <- apply(train_x, 2, sd)
-# sd_mat <- matrix(sds, nrow = 10000, ncol = 3, byrow = TRUE)
-# data_high <- low_dim %*% t(trn_pca$svd$V[, 1:2]) * sd_mat + means_mat
-# data_high <- data.frame(data_high)
-# colnames(data_high) <- rownames(trn_pca$var$contrib)
-# preds_proj <- sign(predict(LR_acc1$model, newdata = data.frame(data_high), type="response")-0.5)
-# 
-# plot_boundary <- data.frame(low_dim)
-# colnames(plot_boundary) <- c("Dim.1", "Dim.2")
-# 
-# plot_boundary |> 
-#   tibble() |> 
-#   mutate(label = preds_proj) |> 
-#   ggplot(aes(x = Dim.1, y = Dim.2, color = as.factor(label))) +
-#   geom_point(alpha = 0.5, size=0.1) +
-#   geom_point(data = proj, shape = 18, size = 0.01,alpha=0.1) +
-#   labs(
-#     x = "PC1", y = "PC2", title = "PCA Projection of LDA Decision Boundary"
-#     ) +
-#   theme_bw()
-```
-
-```{r}
-# data_pca=as.data.frame(cbind(pca_prcomp$x[,1:2],
-#                              train_data$label,
-#                              sign(LR_acc1$score-0.5)))
-# colnames(data_pca)=c("PC1","PC2","label","pred")
-# data_pca_eval=data_pca%>%mutate(eval=case_when(pred==label&label==1~"TP",
-#                                                  pred==label&label==-1~"TN",
-#                                                  pred!=label&pred==1~"FP",
-#                                                  TRUE~"FN"))
-# NDAI=seq(min(train_x$NDAI),max(train_x$NDAI),length.out=300)
-# CORR=seq(min(train_x$CORR),max(train_x$CORR),length.out=300)
-# # boundary=expand.grid(NDAI,CORR)
-# boundary=data.frame(NDAI,CORR)
-# colnames(boundary)=c("NDAI","CORR")
-# boundary$SD=SD=(-coef(model)[1]-coef(model)[2]*NDAI-coef(model)[3]*CORR)/coef(model)[4]
-# boundary=boundary%>%filter(SD>min(train_x$SD)&SD<max(train_x$SD))
-# pca_boundary=as.data.frame(predict(pca_prcomp,boundary)[,1:2])
-# colnames(pca_boundary)=c("PC1","PC2")
-# data_pca_eval%>%
-#   ggplot(aes(x=PC1,y=PC2))+
-#   geom_point(aes(color=eval),size=0.01)+
-#   geom_point(data=pca_boundary,aes(x=PC1,y=PC2),color="black")+
-#   guides(color = guide_legend(override.aes=list(size=3)))
 ```
 
 ```{r}
@@ -785,11 +722,30 @@ p3=test_data_eval_lr%>%
 p1+p2+p3+plot_layout(nrow=1)
 dev.off()
 ```
-
 4(c)
 ```{r}
-min(images$NDAI)
-min(images$SD)
+set.seed(123456)
+RF_acc1=CVmaster(generic_fun="RF",X,y,K,loss_fun=c("accuracy"),drop_margin0=FALSE)
+RF_acc2=CVmaster(generic_fun="RF",X,y,K,loss_fun=c("accuracy"),group_choice=2)
+ESB_acc1=CVmaster(generic_fun="KNN+QDA+NB",X,y,K,loss_fun=c("accuracy"),drop_margin0=FALSE)
+ESB_acc2=CVmaster(generic_fun="KNN+QDA+NB",X,y,K,loss_fun=c("accuracy"),group_choice=2)
+```
+
+```{r}
+e=rbind(RF_acc1$acc,RF_acc2$acc,
+        ESB_acc1$acc,ESB_acc2$acc)%>%
+  data.frame()%>%
+  mutate(`split method`=c("block split","even split"))%>%
+  mutate(classifier=c("Random Forest","Random Forest",
+                      "Ensemble Model","Ensemble Model"))%>%
+  dplyr::select(classifier,`split method`,1)
+colnames(e)=c("classifier","split method",
+              "test accuracy")
+png(file="plot/better-model-accuracy.png",units="in",width=7,
+    height=3.2,pointsize=12,res=300)
+e%>%
+  grid.table(rows=NULL)
+dev.off()
 ```
 
 

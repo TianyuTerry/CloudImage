@@ -101,6 +101,7 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     train_data=group_data%>%filter(fold!=i&fold!=K)
     valid_data=group_data%>%filter(fold==i)
     y_valid=valid_data$label
+    valid_pred=NULL
     if(generic_fun=="logistics"){
       clf=glm(as.formula(train_model),train_data,family="binomial")
       valid_pred=predict(clf,valid_data,type="response")
@@ -126,13 +127,11 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
       train_knn=train_data%>%dplyr::select(NDAI:CORR)
       valid_knn=valid_data%>%dplyr::select(NDAI:CORR)
       valid_pred=knn(train_knn,valid_knn,k=5,cl=train_data$label)
-      if(loss_fun=="accuracy"){
-        y_test=valid_knn%>%dplyr::select(label)
-        valid_acc=c(valid_acc,mean(y_test$label==valid_pred))
-      }
     }
     if("accuracy"%in%loss_fun){
-      valid_acc=c(valid_acc,mean(valid_pred==y_valid))
+      if(!is.null(valid_pred)){
+        valid_acc=c(valid_acc,mean(valid_pred==y_valid))
+      }
     }
   }
   train_data=group_data%>%filter(fold!=K)
@@ -179,13 +178,22 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
     train_knn=train_data%>%dplyr::select(NDAI:CORR)
     test_data=test_data%>%dplyr::select(NDAI:CORR)
     test_pred=knn(train_knn,test_data,k=5,cl=train_data$label)
+    test_pred=as.numeric(as.character(test_pred))
     clf=qda(formula=as.formula(train_model),data=train_data)
     test_pred=cbind(test_pred,as.numeric(as.character(predict(clf,test_data)$class)))
     clf=naive_bayes(as.formula(train_model),data=train_data,usekernel=T) 
     test_pred=cbind(test_pred,sign(predict(clf,test_data,type='prob')[,2]-0.5))
     test_pred=apply(test_pred,1,mfv)
   }
-  if (generic_fun%in%c("logistics","LDA","QDA","NB","CART")){
+  else if(generic_fun=="RF"){
+    trControl=trainControl(method="cv",number=5,search="grid")
+    clf=train(as.formula(train_model),data=train_data,
+              method="rf",metric="Accuracy",trControl=trControl,
+              ntree=50,tuneGrid=expand.grid(mtry=c(1,2,3)))
+    # clf=randomForest(as.formula(train_model),data=train_data,ntree=50, mtry=2) 
+    test_pred=predict(clf,test_data)
+  }
+  if(generic_fun%in%c("logistics","LDA","QDA","NB","CART")){
     res=list(prob=prob_pred,
              gold=y_test,
              test=test_data,
@@ -193,14 +201,26 @@ CVmaster=function(generic_fun="logistics",X,y,K,loss_fun="accuracy",drop_margin0
              score=prob_train,
              model=clf)
   }
-  if (generic_fun=="KNN"){
+  else if(generic_fun%in%c("KNN","KNN+QDA+NB")){
     res=list(gold=y_test,
+             pred=test_pred,
+             test=test_data,
+             train=train_data)
+  }
+  else if(generic_fun=="RF"){
+    res=list(gold=y_test,
+             pred=test_pred,
              test=test_data,
              train=train_data)
   }
   if("accuracy"%in%loss_fun){
     test_acc=mean(test_pred==y_test)
-    res$acc=c(valid_acc,mean(valid_acc),test_acc)
+    if(length(valid_acc)>0){
+      res$acc=c(valid_acc,mean(valid_acc),test_acc)
+    }
+    else{
+      res$acc=c(test_acc)
+    }
   }
   if("prf"%in%loss_fun){
     precision=posPredValue(as.factor(test_pred),as.factor(y_test),positive=1)
