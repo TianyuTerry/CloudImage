@@ -1,6 +1,6 @@
 ---
 title: "proj2_plots"
-author: "Shiqi Liu"
+author: "Shiqi Liu, Tianyu Wu"
 date: "11/29/2022"
 output: pdf_document
 ---
@@ -491,8 +491,10 @@ summary(model)
 ```{r}
 png(file="plot/lr_coef.png",units="in",width=5.5,
     height=2,pointsize=12,res=300)
-coef(summary(model))[,c(1,3,4)]%>%
-  grid.table()
+as.data.frame(coef(summary(model))[,c(1,3,4)])%>%
+  mutate(Variable=rownames(.))%>%
+  relocate(Variable)%>%
+  grid.table(row=NULL)
 dev.off()
 ```
 ```{r}
@@ -580,7 +582,7 @@ test_data_eval%>%
   geom_point(shape=15,size=0.00000000000001)+
   facet_wrap(~image)+
   coord_fixed()+
-  guides(color = guide_legend(override.aes = list(size = 10)))+
+  guides(color=guide_legend(override.aes=list(size=10)))+
   labs(x="x coordinate",y="y coordinate")+
   theme(legend.position="right",legend.title=element_blank())
 dev.off()
@@ -645,10 +647,8 @@ test_data_eval_qda%>%
   geom_point(shape=15,size=0.00000000000001)+
   facet_wrap(~image)+
   coord_fixed()+
-  guides(color = guide_legend(override.aes = list(size = 10)))+
+  guides(color=guide_legend(override.aes=list(size=10)))+
   labs(x="x coordinate",y="y coordinate")+
-  # scale_color_manual(values=c("#501d8a", "#1c8041", "#e55709"),
-  #                    labels=c("not cloud","unlabeled","cloud"))+
   theme(legend.position="right",legend.title=element_blank())
 dev.off()
 ```
